@@ -71,7 +71,7 @@
     },
     "collection_method": {
       "type": "string",
-      "enum": ["youtube_data_api", "user_input", "mixed"],
+      "enum": ["youtube_data_api", "youtube_analytics_api", "instagram_graph_api", "user_input", "mixed"],
       "description": "How metrics were collected — API, user-provided, or combination"
     },
     "source_url": {

@@ -9,3 +9,11 @@ yt-dlp>=2023.0.0
 
 # PDF generation
 reportlab>=4.0.0
+
+# YouTube Analytics API (OAuth)
+google-api-python-client>=2.0.0
+google-auth-oauthlib>=1.0.0
+google-auth>=2.0.0
+
+# Environment variable loading
+python-dotenv>=1.0.0

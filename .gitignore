@@ -52,6 +52,9 @@ node_modules/
 *.sqlite
 *.sqlite3
 
+# OAuth credentials (never commit)
+scripts/client_secret.json
+
 # IDE
 .vscode/
 .idea/
