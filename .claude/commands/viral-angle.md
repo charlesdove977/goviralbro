@@ -1,6 +1,6 @@
 # /viral:angle — Contrast Formula Angle Development
 
-You are running the Viral Command angle engine. Your job is to transform discovered topics into platform-specific content angles using the Contrast Formula (common belief → surprising truth), with funneling/CTA direction baked into every angle.
+You are running the Viral Command angle engine. Your job is to transform discovered topics into format-specific content angles using the Contrast Formula (common belief → surprising truth), with funneling/CTA direction baked into every angle.
 
 **Arguments:** $ARGUMENTS
 
@@ -20,11 +20,15 @@ Read the agent brain to understand the creator's identity, audience, and monetiz
 - `icp.pain_points[]` — audience pains (for pain_addressed)
 - `icp.goals[]` — what the audience wants to achieve
 - `pillars[]` — content themes + keywords
-- `platforms.posting[]` — where this creator publishes (determines which platform angles to generate)
 - `monetization` — primary_funnel, secondary_funnels, cta_strategy (default_cta, community_url, website_url)
 - `audience_blockers[]` — lies the audience believes (for blocker destruction matching)
 - `content_jobs` — pillar-to-job mapping (build_trust, demonstrate_capability, drive_action)
 - `competitors[]` — competitor handles + platforms (for differentiation)
+
+**Formats to generate angles for:**
+- `longform` — YouTube longform videos
+- `shortform` — cross-posted to Shorts, Reels, AND TikTok (one shortform = one video posted to all 3)
+- `linkedin` — LinkedIn text posts (separate format)
 
 **If the brain is empty or `identity.name` is blank:**
 Stop and say: *"Your agent brain isn't set up yet. Run `/viral:onboard` first to tell me who you are and what you create."*
@@ -51,13 +55,13 @@ For each competitor with data:
   - **data** — numbers, metrics, results
   - **before/after** — visual comparison
   - **case study** — real client/project story
-- Note platform-specific patterns (hook style, pacing, visual approach)
+- Note format-specific patterns (hook style, pacing, visual approach)
 
 **Step 3: Identify gaps and opportunities**
 - Topics where competitors use weak contrasts (mild) — room for stronger angles
 - Proof methods they DON'T use (if nobody demos, demo is your edge)
 - Audience segments they ignore (if everyone targets advanced, beginners are underserved)
-- Platforms where competitor angles are weakest
+- Formats where competitor angles are weakest
 
 **Step 4: Display analysis**
 
@@ -84,7 +88,7 @@ OPPORTUNITIES
 - Underused proof: {method} — none of your competitors {details}
 - Weak contrast area: {topic} — competitors using mild contrasts
 - Audience gap: {segment} — no one targeting {segment} with {topic}
-- Platform gap: {platform} — competitors weakest here
+- Format gap: {format} — competitors weakest here
 ═══════════════════════════════════════════════════
 ```
 
@@ -130,7 +134,7 @@ Parse `$ARGUMENTS` to determine the topic to develop angles for:
 
 ## Phase C: Generate Angles (Contrast Formula)
 
-For each platform in `platforms.posting[]`, develop an angle using the **Contrast Formula**:
+For each of the three formats (`longform`, `shortform`, `linkedin`), develop **5 different angles** — each a genuinely different take on the same topic. That's 15 total angles (5 per format).
 
 ### The Contrast Formula
 
@@ -140,7 +144,16 @@ Every great piece of content flips an expectation. The formula:
 
 The bigger the gap between A and B, the stronger the angle.
 
-### For each posting platform, generate one angle:
+### For each format, generate 5 angles. Each angle must have:
+
+- A **different** Contrast Formula (different common_belief → different surprising_truth)
+- A **different** proof method
+- A **different** title suggestion (or hook/opener for shortform/linkedin)
+- A **different** hook approach
+
+These are NOT minor variations — they are genuinely different takes on the same topic within the same format.
+
+### For each angle:
 
 **Step 1: Identify the Common Belief (A)**
 - What does the target audience CURRENTLY believe about this topic?
@@ -162,23 +175,24 @@ The bigger the gap between A and B, the stronger the angle.
 
 Target: **moderate to strong** for most content. Extreme only when you have undeniable proof.
 
-**Step 4: Set Platform-Specific Guidance**
+**Step 4: Apply Format-Specific Guidance**
 
-For **youtube_longform** (if in posting platforms):
-- Title suggestion: curiosity-driven + clarity (e.g., "I Replaced My Team with AI Agents — Here's What Happened")
+For **longform:**
+- Title suggestion: curiosity-driven + clarity
 - Proof method: demo, screen recording, case study, before/after
-- Retention strategy: promise payoff in intro, deliver proof throughout, callback to A→B contrast at end
+- Retention strategy: promise payoff in intro, deliver proof throughout
 - Target length: 8-20 minutes
 - Structure hint: Hook (A→B tease) → Context → Proof → Implementation → CTA
 
-For **youtube_shorts** / **instagram_reels** / **tiktok** (if in posting platforms):
+For **shortform:**
 - Hook-first: 3-second rule — state the Common Belief OR the Surprising Truth immediately
 - Visual emphasis: what to SHOW on screen in first 3 seconds
 - 30-60 second target
-- Pattern interrupt: start with the most shocking part of the B truth
+- Pattern interrupt: start with the most shocking part
 - Structure hint: Hook → Quick proof → Payoff → CTA (all under 60s)
+- Cross-post note: ONE script goes to Shorts + Reels + TikTok. Platform-specific adjustments (captions, hashtags, audio) are formatting notes, not separate scripts.
 
-For **linkedin** (if in posting platforms):
+For **linkedin:**
 - Text-first framing: open with a bold statement or contrarian take
 - Professional tone: adjust language for business audience
 - Personal story angle: tie the A→B contrast to a personal experience
@@ -221,7 +235,7 @@ For **linkedin** (if in posting platforms):
   - Default → `community`
 - `cta_copy`: Select and adapt a CTA from the template library:
   1. Load `data/cta-templates.json`
-  2. Select template matching: `templates.{platform}.{cta_type}`
+  2. Select template matching: `templates.{format}.{cta_type}`
   3. Pick the most relevant template for this angle's topic
   4. Adapt the template:
      - Replace `{{variable}}` placeholders with values from agent brain (see `variables` mapping in cta-templates.json)
@@ -265,7 +279,7 @@ For each competitor who covered the topic:
 
 ## Phase E: Display Angles
 
-Present all generated angles in a clean, scannable format:
+Present all generated angles in a clean, scannable format — grouped by format with a summary table first, then full details below:
 
 ```
 ═══════════════════════════════════════════════════
@@ -276,9 +290,52 @@ From topic: {title}
 Pillar: {pillar name}
 
 ───────────────────────────────────────────────────
-📺 YOUTUBE LONGFORM
+📺 LONGFORM (5 angles)
 ───────────────────────────────────────────────────
-Title: {suggested title}
+
+ #  │ Title                              │ Contrast  │ Proof
+────┼────────────────────────────────────┼───────────┼──────────
+ 1  │ {title}                            │ {strength}│ {method}
+ 2  │ {title}                            │ {strength}│ {method}
+ 3  │ {title}                            │ {strength}│ {method}
+ 4  │ {title}                            │ {strength}│ {method}
+ 5  │ {title}                            │ {strength}│ {method}
+
+───────────────────────────────────────────────────
+⚡ SHORTFORM (5 angles)
+───────────────────────────────────────────────────
+
+ #  │ Hook (first 3s)                    │ Contrast  │ Proof
+────┼────────────────────────────────────┼───────────┼──────────
+ 6  │ {hook}                             │ {strength}│ {method}
+ 7  │ {hook}                             │ {strength}│ {method}
+ 8  │ {hook}                             │ {strength}│ {method}
+ 9  │ {hook}                             │ {strength}│ {method}
+ 10 │ {hook}                             │ {strength}│ {method}
+
+───────────────────────────────────────────────────
+💼 LINKEDIN (5 angles)
+───────────────────────────────────────────────────
+
+ #  │ Opening line                       │ Contrast  │ Story angle
+────┼────────────────────────────────────┼───────────┼──────────
+ 11 │ {opener}                           │ {strength}│ {story}
+ 12 │ {opener}                           │ {strength}│ {story}
+ 13 │ {opener}                           │ {strength}│ {story}
+ 14 │ {opener}                           │ {strength}│ {story}
+ 15 │ {opener}                           │ {strength}│ {story}
+
+═══════════════════════════════════════════════════
+```
+
+Then show **full angle details** for each angle below the summary table, grouped by format:
+
+```
+───────────────────────────────────────────────────
+📺 LONGFORM — Full Details
+───────────────────────────────────────────────────
+
+#1: {title}
 Common belief: "{A}"
 Surprising truth: "{B}"
 Contrast: {strength}
@@ -293,10 +350,14 @@ CTA: {cta_copy}
 Competitors:
   - {competitor}: {their_angle} → Your edge: {differentiation}
 
+#2: {title}
+...
+
 ───────────────────────────────────────────────────
-⚡ YOUTUBE SHORTS
+⚡ SHORTFORM — Full Details
 ───────────────────────────────────────────────────
-Hook (first 3s): "{opening line}"
+
+#6: {hook}
 Common belief: "{A}"
 Surprising truth: "{B}"
 Contrast: {strength}
@@ -307,10 +368,14 @@ Job: {content_job} | Blocker: {blocker_destroyed or "—"}
 
 CTA: {cta_copy}
 
+#7: {hook}
+...
+
 ───────────────────────────────────────────────────
-💼 LINKEDIN
+💼 LINKEDIN — Full Details
 ───────────────────────────────────────────────────
-Opening line: "{bold statement}"
+
+#11: {opening line}
 Common belief: "{A}"
 Surprising truth: "{B}"
 Contrast: {strength}
@@ -322,14 +387,15 @@ Job: {content_job} | Blocker: {blocker_destroyed or "—"}
 
 CTA: {cta_copy}
 
-═══════════════════════════════════════════════════
+#12: {opening line}
+...
 ```
 
 After displaying, ask:
 
 ```
 Keep all angles? [Y/n]
-Or type numbers to pass on specific angles (e.g., "pass 2, 3")
+Or type numbers to pass on specific angles (e.g., "pass 2, 7, 12")
 ```
 
 - Default (Enter or "y"): keep all as "draft"
@@ -354,7 +420,7 @@ Save all kept angles to `data/angles.jsonl`:
 {
   "id": "angle_20260304_001",
   "topic_id": "topic_20260304_005",
-  "platform": "youtube_longform",
+  "format": "longform",
   "title": "I Replaced My Team with AI Agents — Here's What Happened",
   "contrast": {
     "common_belief": "You need to hire more people to scale your agency",
@@ -391,11 +457,28 @@ Save all kept angles to `data/angles.jsonl`:
 ═══════════════════════════════════════════════════
 ✓ Saved {N} angles to data/angles.jsonl
 
-  {id}: {platform} — "{title}" [{contrast_strength}]
-  {id}: {platform} — "{title}" [{contrast_strength}]
-  ...
+  LONGFORM:
+  {id}: "{title}" [{contrast_strength}]
+  {id}: "{title}" [{contrast_strength}]
+  {id}: "{title}" [{contrast_strength}]
+  {id}: "{title}" [{contrast_strength}]
+  {id}: "{title}" [{contrast_strength}]
 
-Next: Run /viral:script "{angle_id}" to generate hooks and scripts.
+  SHORTFORM:
+  {id}: "{title}" [{contrast_strength}]
+  {id}: "{title}" [{contrast_strength}]
+  {id}: "{title}" [{contrast_strength}]
+  {id}: "{title}" [{contrast_strength}]
+  {id}: "{title}" [{contrast_strength}]
+
+  LINKEDIN:
+  {id}: "{title}" [{contrast_strength}]
+  {id}: "{title}" [{contrast_strength}]
+  {id}: "{title}" [{contrast_strength}]
+  {id}: "{title}" [{contrast_strength}]
+  {id}: "{title}" [{contrast_strength}]
+
+Next: Run /viral:script to generate hooks and scripts.
 ═══════════════════════════════════════════════════
 ```
 
@@ -419,5 +502,5 @@ If the source topic came from a JSONL file:
 - **Common beliefs must be GENUINE** — if you can't find real people who believe A, the contrast is fake
 - **Every angle needs a CTA** — content without funneling is a hobby, not a business
 - **Save before displaying** — write JSONL first, then show summary (data persistence is priority)
-- **Platform-specific, not generic** — a YouTube longform angle is fundamentally different from a TikTok angle
+- **Format-specific, not generic** — a longform angle is fundamentally different from a shortform angle or a LinkedIn post
 - **Proof > opinion** — prioritize angles where the creator can DEMONSTRATE the surprising truth

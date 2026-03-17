@@ -2,16 +2,16 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "angle.schema.json",
   "title": "Content Angle",
-  "description": "An angle developed from a topic using the Contrast Formula (common belief -> surprising truth), platform-specific.",
+  "description": "An angle developed from a topic using the Contrast Formula (common belief -> surprising truth), format-specific.",
   "type": "object",
-  "required": ["id", "topic_id", "platform", "contrast", "created_at"],
+  "required": ["id", "topic_id", "format", "contrast", "created_at"],
   "properties": {
     "id": { "type": "string", "description": "Unique angle ID (e.g., angle_20260304_001)" },
     "topic_id": { "type": "string", "description": "Reference to the source topic ID" },
-    "platform": {
+    "format": {
       "type": "string",
-      "enum": ["youtube_longform", "youtube_shorts", "instagram_reels", "instagram_posts", "tiktok", "linkedin", "facebook"],
-      "description": "Target platform this angle is optimized for"
+      "enum": ["longform", "shortform", "linkedin"],
+      "description": "Content format this angle is developed for (longform=YouTube, shortform=Shorts/Reels/TikTok, linkedin=LinkedIn post)"
     },
     "title": { "type": "string", "description": "Working title for this angle" },
     "contrast": {

@@ -1,6 +1,6 @@
 # /viral:script — HookGenie Hook & Script Generator
 
-You are running the Viral Command script engine. Your job is to generate battle-tested hooks from content angles using 6 proven patterns, score them, and build a persistent hook repository that improves over time. With the `--longform` flag, you also generate full YouTube longform scripts with filming cards. With the `--shortform` flag, you generate platform-specific short-form scripts for Shorts, Reels, TikTok, and LinkedIn.
+You are running the Viral Command script engine. Your job is to generate battle-tested hooks from content angles using 6 proven patterns, score them, and build a persistent hook repository that improves over time. When run without arguments, you interactively guide the user through format selection (longform/shortform), angle picking, hook generation, script writing, and optional LinkedIn post creation.
 
 **Arguments:** $ARGUMENTS
 
@@ -34,19 +34,24 @@ Read the agent brain to understand the creator's identity and preferences:
 
 **If `--pick` flag:**
 1. Scan `data/angles.jsonl` for angles with `status: "draft"` (not yet scripted)
-2. Display top 5 by most recent:
+2. Group by format and display:
    ```
    ═══════════════════════════════════════
    PICK AN ANGLE TO HOOK
    ═══════════════════════════════════════
 
-    #  │ Platform         │ Angle Title                        │ Contrast
-   ────┼──────────────────┼────────────────────────────────────┼──────────
-    1  │ youtube_longform  │ {title}                            │ {strength}
-    2  │ youtube_shorts    │ {title}                            │ {strength}
-    3  │ linkedin          │ {title}                            │ {strength}
-    4  │ instagram_reels   │ {title}                            │ {strength}
-    5  │ tiktok            │ {title}                            │ {strength}
+   📺 LONGFORM
+    #  │ Title                              │ Contrast
+   ────┼────────────────────────────────────┼──────────
+    1  │ {title}                            │ {strength}
+    2  │ {title}                            │ {strength}
+
+   ⚡ SHORTFORM
+    3  │ {title}                            │ {strength}
+    4  │ {title}                            │ {strength}
+
+   💼 LINKEDIN
+    5  │ {title}                            │ {strength}
 
    Enter number to select.
    ═══════════════════════════════════════
@@ -61,7 +66,7 @@ Read the agent brain to understand the creator's identity and preferences:
 **If `--shortform` flag (combine with any input method above):**
 - Note this flag for later — after hooks are generated (Phase E), continue to Phase I for short-form script generation
 - Can combine: `/viral:script angle_id --shortform`, `/viral:script --pick --shortform`
-- Generates scripts for each shortform platform in `platforms.posting[]` (youtube_shorts, instagram_reels, tiktok, linkedin)
+- Generates ONE cross-platform shortform script (not separate entries per platform)
 
 **If `--pdf` flag (combine with --longform or --shortform):**
 - Note this flag for later — after script persistence (Phase H or Phase J), continue to Phase K for PDF lead magnet generation
@@ -73,28 +78,60 @@ Read the agent brain to understand the creator's identity and preferences:
 - Exit — do not proceed
 
 **If no arguments:**
-Display usage:
-```
-Usage: /viral:script [angle_id | topic text | --pick] [--longform | --shortform] [--pdf]
 
-  angle_id     Generate hooks for a specific angle
-  "topic"      Generate hooks from topic text
-  --pick       Choose from draft angles
-  --longform   Full YouTube longform script with filming cards
-  --shortform  Short-form scripts for Shorts/Reels/TikTok/LinkedIn
-  --pdf        Generate PDF lead magnet from script (use with --longform or --shortform)
+Begin interactive format selection:
 
-Examples:
-  /viral:script angle_20260304_001
-  /viral:script "AI agents replacing call centers"
-  /viral:script --pick
-  /viral:script angle_20260304_001 --longform
-  /viral:script --pick --shortform
-  /viral:script --pick --longform --pdf
-  /viral:script angle_id --shortform --pdf
-```
+1. Ask the user:
+   ```
+   ═══════════════════════════════════════
+   VIRAL SCRIPT ENGINE
+   ═══════════════════════════════════════
 
-**Output of this phase:** An angle object with: title, contrast (common_belief, surprising_truth, contrast_strength), platform, target_audience, proof_method, funnel_direction.
+   What are we making?
+
+     1. Longform video (YouTube)
+     2. Shortform video (Shorts/Reels/TikTok)
+     3. Just hooks (no script)
+
+   Enter number:
+   ═══════════════════════════════════════
+   ```
+
+2. Based on the user's answer:
+
+   **If "1" (longform):**
+   - Filter `data/angles.jsonl` for angles with `format: "longform"` and `status: "draft"`
+   - Show the 5 most recent matching angles:
+     ```
+     ═══════════════════════════════════════
+     PICK AN ANGLE
+     ═══════════════════════════════════════
+
+      #  │ Title                              │ Contrast   │ Proof
+     ────┼────────────────────────────────────┼────────────┼──────────
+      1  │ {title}                            │ {strength} │ {method}
+      2  │ {title}                            │ {strength} │ {method}
+      3  │ {title}                            │ {strength} │ {method}
+      4  │ {title}                            │ {strength} │ {method}
+      5  │ {title}                            │ {strength} │ {method}
+
+     Enter number to select.
+     ═══════════════════════════════════════
+     ```
+   - If no draft longform angles exist: "No draft angles found for longform. Run `/viral:angle` first."
+   - After selection, proceed with `--longform` behavior (hooks → script → filming cards)
+
+   **If "2" (shortform):**
+   - Filter `data/angles.jsonl` for angles with `format: "shortform"` and `status: "draft"`
+   - Show the 5 most recent matching angles (same table format as above)
+   - If no draft shortform angles exist: "No draft angles found for shortform. Run `/viral:angle` first."
+   - After selection, proceed with `--shortform` behavior (hooks → shortform script)
+
+   **If "3" (just hooks):**
+   - Show ALL draft angles (any format), using the same table format
+   - After selection, generate hooks only (no script generation — skip Phase F/G/H and Phase I/J)
+
+**Output of this phase:** An angle object with: title, contrast (common_belief, surprising_truth, contrast_strength), platform, target_audience, proof_method, funnel_direction. Plus a mode flag: `longform`, `shortform`, or `hooks_only`.
 
 ---
 
@@ -431,7 +468,7 @@ Save approved hooks to `data/hooks.jsonl`:
 
 **Display confirmation:**
 
-**If neither --longform nor --shortform was used:**
+**If mode is `hooks_only` (no --longform or --shortform, or user chose "just hooks"):**
 ```
 ═══════════════════════════════════════════════════
 ✓ Saved {N} hooks to data/hooks.jsonl
@@ -443,11 +480,11 @@ Angle "{angle_title}" status → scripted
 
 Want scripts? Re-run with a flag:
   /viral:script {angle_id} --longform    (YouTube longform + filming cards)
-  /viral:script {angle_id} --shortform   (Shorts/Reels/TikTok/LinkedIn)
+  /viral:script {angle_id} --shortform   (Shortform cross-post script)
 ═══════════════════════════════════════════════════
 ```
 
-**If --longform WAS used:**
+**If mode is `longform`:**
 ```
 ═══════════════════════════════════════════════════
 ✓ Saved {N} hooks to data/hooks.jsonl
@@ -459,14 +496,14 @@ Generating longform YouTube script...
 ```
 Then continue to Phase F.
 
-**If --shortform WAS used:**
+**If mode is `shortform`:**
 ```
 ═══════════════════════════════════════════════════
 ✓ Saved {N} hooks to data/hooks.jsonl
 
 Angle "{angle_title}" status → scripted
 
-Generating shortform scripts...
+Generating shortform script...
 ═══════════════════════════════════════════════════
 ```
 Then continue to Phase I.
@@ -475,7 +512,7 @@ Then continue to Phase I.
 
 ## Phase F: Longform Script Generation (--longform only)
 
-**Skip this phase if --longform was NOT in $ARGUMENTS.** Only proceed if the user explicitly requested longform script generation.
+**Skip this phase if mode is NOT `longform`.** Only proceed if the user explicitly requested longform script generation.
 
 ### Step 1: Select Opening Hook
 
@@ -783,7 +820,49 @@ Save the complete script to `data/scripts.jsonl`:
 
 **Write one JSON line to `data/scripts.jsonl`** (append, never overwrite).
 
+### Save .md Script File
+
+After saving to `data/scripts.jsonl`, save a human-readable .md script file.
+
+**Script save path:** `/Users/user/Desktop/Development-Charlie-2/Charlieautomates/content/scripts/`
+
+**Check if folders exist first.** If the `content/scripts/` folder structure does not exist, ask:
+```
+I don't see a content/scripts folder set up yet. Want me to create it?
+
+  content/scripts/
+    done/
+      short-video/
+      long-video/
+      linkedin-post/
+    not-done/
+      short-video/
+      long-video/
+      linkedin-post/
+
+[Y/n]
+```
+If yes, create them. If no, skip .md file saving.
+
+**File naming:** `LF - {slug}.md` where `{slug}` is a kebab-case version of the angle title (e.g., "I Replaced My Team with AI Agents" → `i-replaced-my-team-with-ai-agents`).
+
+**Save to:** `/Users/user/Desktop/Development-Charlie-2/Charlieautomates/content/scripts/not-done/long-video/`
+
+**The .md file should contain:**
+- Title
+- Format: longform
+- Date created
+- Angle ID reference
+- The full script content: opening hook, retention hook, all body sections with talking points/proof/transitions, mid CTA, closing CTA, outro
+- Filming cards (summary table + card details)
+
 **Display confirmation:**
+```
+✓ Script saved: content/scripts/not-done/long-video/LF - {slug}.md
+```
+
+### Display Persistence Confirmation
+
 ```
 ═══════════════════════════════════════════════════════════════
 ✓ Script saved: {script_id}
@@ -795,13 +874,40 @@ Filming cards: {N} scenes ready
 
 Hooks: {N} saved to data/hooks.jsonl
 Script: saved to data/scripts.jsonl
+File: content/scripts/not-done/long-video/LF - {slug}.md
 
 Ready to film! Print your filming cards or review with:
   cat data/scripts.jsonl | jq 'select(.id=="{script_id}") | .filming_cards'
 ═══════════════════════════════════════════════════════════════
 ```
 
-**If --pdf was used:** After displaying the above confirmation, add:
+### LinkedIn Post Offer
+
+After displaying the persistence confirmation, offer a LinkedIn post:
+
+```
+═══════════════════════════════════════
+Want a LinkedIn post for this piece? [y/N]
+═══════════════════════════════════════
+```
+
+- Default is **No** (just pressing Enter skips it)
+- If yes:
+  1. Load linkedin angles from `data/angles.jsonl` with `format: "linkedin"` matching the same `topic_id` as the current angle
+  2. If matching linkedin angles exist, show them and ask which one to use as the basis
+  3. If no matching linkedin angles, generate a LinkedIn post directly from the script content using this structure:
+     - **Hook** (scroll-stopper first line)
+     - **Body** (value/story/list — 3-5 short paragraphs)
+     - **Closer** (reframe/insight)
+     - **CTA** (question for engagement)
+  4. Display the LinkedIn post
+  5. Ask to save it: "Save this LinkedIn post? [Y/n]"
+  6. If yes:
+     - Save to `data/scripts.jsonl` with `platform: "linkedin"`, generating a new script ID
+     - Save as .md file: `LI - {slug}.md` in `/Users/user/Desktop/Development-Charlie-2/Charlieautomates/content/scripts/not-done/linkedin-post/`
+     - Display: `✓ LinkedIn post saved: content/scripts/not-done/linkedin-post/LI - {slug}.md`
+
+**If --pdf was used:** After the LinkedIn offer (whether accepted or declined), add:
 ```
 Generating PDF lead magnet...
 ```
@@ -811,27 +917,23 @@ Then continue to Phase K.
 
 ## Phase I: Shortform Script Generation (--shortform only)
 
-**Skip this phase if --shortform was NOT in $ARGUMENTS.** Only proceed if the user explicitly requested shortform script generation.
+**Skip this phase if mode is NOT `shortform`.** Only proceed if the user explicitly requested shortform script generation.
 
-### Step 1: Identify Shortform Platforms
+### Step 1: Select Opening Hook
 
-From `platforms.posting[]` in agent brain, filter for shortform platforms:
-- `youtube_shorts`
-- `instagram_reels`
-- `tiktok`
-- `linkedin`
+From the shortform hooks generated in Phase D, select the **top-scoring** hook across youtube_shorts, instagram_reels, and tiktok as the opening:
+- Use the #1 ranked shortform hook
+- Record its hook_id for the script object
 
-Only generate scripts for platforms the creator actually posts on. If a platform isn't in `platforms.posting[]`, skip it.
+### Step 2: Generate ONE Cross-Platform Beat-Based Script
 
-### Step 2: Generate Beat-Based Scripts (YouTube Shorts / Instagram Reels / TikTok)
-
-For each video-based shortform platform in the creator's posting list, generate a beat-based script (5-8 beats, 15-60s total).
+Generate a single beat-based script (5-8 beats, 15-60s total) that works across all shortform video platforms.
 
 Use the **HEIL framework** (Hook / Explain / Illustrate / Lesson) as the conceptual backbone for beats:
 
 | Beat | Time | HEIL Label | Purpose | Requirements |
 |------|------|------------|---------|-------------|
-| 1 | 0-3s | **H: HOOK** | Top-scoring hook for this platform from Phase D. visual_cue required. | Grab attention — pattern interrupt, bold claim, or surprising visual. |
+| 1 | 0-3s | **H: HOOK** | Top-scoring shortform hook from Phase D. visual_cue required. | Grab attention — pattern interrupt, bold claim, or surprising visual. |
 | 2 | 3-8s | **E: EXPLAIN** | One sentence setting up the problem/contrast. No jargon — assume the viewer has NEVER heard of this topic before. | Visual: relevant B-roll or text overlay. |
 | 3-5 | 8-25s | **I: ILLUSTRATE** | 2-3 beats delivering the core value with proof. Use an analogy from the VIEWER'S world, not the creator's. Each beat: action, visual, text_overlay. | Make it tangible — "It's like having a full-time employee who never sleeps" not "It uses agentic AI workflows." |
 | 6 | 25-30s | **L: LESSON** | Specific actionable takeaway the viewer can use TODAY. Not vague inspiration — one concrete step. | "Open Claude Code and type /viral:discover — that's it, you're running competitor research." |
@@ -840,162 +942,195 @@ Use the **HEIL framework** (Hook / Explain / Illustrate / Lesson) as the concept
 
 **HEIL is a conceptual guide, not a rigid format.** The output format (beats array, timestamps, actions, visuals) stays identical to the standard beat structure. HEIL just ensures each beat serves its purpose clearly.
 
-**Platform-specific adjustments:**
+For each beat, include:
+- `beat_number`: Sequential
+- `timestamp`: Time range (e.g., "0-3s")
+- `heil_label`: Which HEIL phase this beat serves (H/E/I/L/CTA/LOOP)
+- `action`: What to say/do
+- `visual`: What to show on screen
+- `text_overlay`: Text to display on screen (required for every beat — shortform is text-heavy)
+- `audio_note`: Optional trending audio/sound placeholder
+
+### Step 3: Generate Cross-Post Notes
+
+After the beat table, generate platform-specific adjustment notes:
 
 **YouTube Shorts:**
-- Optimize for subscribe CTA ("Subscribe for more {niche} tips")
+- Subscribe CTA phrasing ("Subscribe for more {niche} tips")
 - No link-in-bio (Shorts don't support it well)
 - Text overlays should be bold, centered, large font
 
 **Instagram Reels:**
-- Include caption draft with hashtags
+- Caption draft with hashtags (caption should standalone — many viewers read caption without watching)
 - CTA style: "Comment '{keyword}'" or "Link in bio"
-- Add `audio_note` with trending audio placeholder: "🎵 Trending audio: [use current viral sound or original audio]"
-- Caption should standalone — many viewers read caption without watching
+- Trending audio placeholder: "Trending audio: [use current viral sound or original audio]"
 
 **TikTok:**
-- Text-on-screen for EVERY beat (TikTok is text-heavy)
-- Add `audio_note` with trending sound placeholder: "🎵 Sound: [trending sound or original]"
-- Consider stitch/duet hooks if applicable: "Stitch this with your {topic} results"
-- Shorter is better — aim for 15-30s when possible
+- Text-on-screen emphasis notes (TikTok is text-heavy — text_overlay on every beat is critical)
+- Trending sound placeholder: "Sound: [trending sound or original]"
+- Stitch/duet hook if applicable: "Stitch this with your {topic} results"
+- Duration note — shorter is better for TikTok, aim for 15-30s when possible
 
-### Step 3: Generate LinkedIn Post (Text-Based)
-
-For LinkedIn (if in `platforms.posting[]`), generate a text post structure — NOT beat-based:
-
-**LinkedIn Post Structure:**
-- **Hook line:** Top-scoring linkedin hook from Phase D (bold, standalone first line)
-- **Body:** 3-5 short paragraphs (1-2 sentences each) delivering the angle's contrast
-  - Each paragraph should be punchy
-  - Use line breaks between paragraphs (LinkedIn rewards white space)
-  - Weave in proof element matching proof_method (data, story, experience)
-- **CTA:** From cta-templates.json linkedin section, matched to `monetization.cta_strategy`
-- **Hashtags:** 3-5 relevant hashtags
-- **Character count estimate:** LinkedIn optimal is 1,200-1,500 chars
-
-For LinkedIn persistence, represent paragraphs as "beats" in shortform_structure:
-- beat_number: paragraph number
-- timestamp: "paragraph {N}" (not time-based)
-- action: the paragraph text
-- visual: "" (text-only platform)
-- text_overlay: "" (not applicable)
-- audio_note: "" (not applicable)
-
-### Step 4: Display All Shortform Scripts
+### Step 4: Display Shortform Script
 
 ```
 ═══════════════════════════════════════
-SHORTFORM SCRIPTS: {Angle Title}
+SHORTFORM SCRIPT: {Angle Title}
 ═══════════════════════════════════════
 
 From angle: {angle_id} — "{title}"
 Contrast: "{common_belief}" → "{surprising_truth}"
 
-⚡ YOUTUBE SHORTS (estimated: {duration})
+⚡ SHORTFORM VIDEO (estimated: {duration})
 ─────────────────────────────────────
-Beat │ Time  │ Action              │ Visual              │ Text Overlay
-─────┼───────┼─────────────────────┼─────────────────────┼──────────────
- 1   │ 0-3s  │ {hook}              │ {visual}            │ {overlay}
- 2   │ 3-8s  │ {context}           │ {visual}            │ {overlay}
- 3   │ 8-15s │ {deliver_1}         │ {visual}            │ {overlay}
- 4   │ 15-20s│ {deliver_2}         │ {visual}            │ {overlay}
- 5   │ 20-25s│ {proof}             │ {visual}            │ {overlay}
- 6   │ 25-30s│ {cta}               │ {visual}            │ {overlay}
+Beat │ Time   │ HEIL │ Action              │ Visual              │ Text Overlay
+─────┼────────┼──────┼─────────────────────┼─────────────────────┼──────────────
+ 1   │ 0-3s   │ H    │ {hook}              │ {visual}            │ {overlay}
+ 2   │ 3-8s   │ E    │ {context}           │ {visual}            │ {overlay}
+ 3   │ 8-15s  │ I    │ {deliver_1}         │ {visual}            │ {overlay}
+ 4   │ 15-20s │ I    │ {deliver_2}         │ {visual}            │ {overlay}
+ 5   │ 20-25s │ I    │ {proof}             │ {visual}            │ {overlay}
+ 6   │ 25-30s │ L    │ {lesson}            │ {visual}            │ {overlay}
+ 7   │ 30-45s │ CTA  │ {cta}               │ {visual}            │ {overlay}
 
-📱 INSTAGRAM REELS (estimated: {duration})
 ─────────────────────────────────────
-Beat │ Time  │ Action              │ Visual              │ Text Overlay
-─────┼───────┼─────────────────────┼─────────────────────┼──────────────
-{same beat table}
-
-Caption: {caption_draft}
-Audio: 🎵 {trending_audio_placeholder}
-Hashtags: {hashtags}
-
-🎵 TIKTOK (estimated: {duration})
+CROSS-POST NOTES
 ─────────────────────────────────────
-Beat │ Time  │ Action              │ Visual              │ Text Overlay
-─────┼───────┼─────────────────────┼─────────────────────┼──────────────
-{same beat table — text_overlay on every beat}
 
-Sound: 🎵 {trending_sound_placeholder}
+📺 YouTube Shorts:
+  • {shorts-specific notes}
+  • CTA: "{subscribe cta}"
 
-💼 LINKEDIN POST (~{char_count} chars)
-─────────────────────────────────────
-{full post text with line breaks}
+📱 Instagram Reels:
+  • Caption: {caption_draft}
+  • Hashtags: {hashtags}
+  • Audio: {trending_audio_placeholder}
+  • CTA: "{ig cta}"
 
-Hashtags: {hashtags}
-CTA: {cta_text}
+🎵 TikTok:
+  • {tiktok-specific notes}
+  • Sound: {trending_sound_placeholder}
+  • Duration tip: {duration note}
 
 ═══════════════════════════════════════
-Keep all scripts? [Y/n] or type platform name to drop
+Keep this script? [Y/n] or provide feedback to revise
 ═══════════════════════════════════════
 ```
 
-- Default (Enter or "y"): keep all, proceed to Phase J
-- "drop {platform}": remove that platform's script before saving
-- "n": discard all and return to hooks
+- Default (Enter or "y"): keep, proceed to Phase J
+- "n": discard and return to hooks
+- Feedback text: revise and re-display
 
 ---
 
-## Phase J: Persist Shortform Scripts (--shortform only)
+## Phase J: Persist Shortform Script (--shortform only)
 
 **Skip this phase if Phase I was skipped.**
 
-Save each platform's script as a separate JSONL line to `data/scripts.jsonl`:
+Save ONE script entry to `data/scripts.jsonl`:
 
 **ID Generation:**
 1. Read existing `data/scripts.jsonl` (if it exists and has content)
 2. Find the highest existing ID number for today's date
 3. Increment from there: `script_{YYYYMMDD}_{NNN}`
 4. If no existing scripts today, start at 001
-5. One ID per platform — e.g., 4 platforms = 4 sequential IDs
 
-**For each platform script, build a JSON object:**
-- `id`: Generated ID (sequential per platform)
+**Build a single JSON object:**
+- `id`: Generated ID
 - `angle_id`: Source angle ID
-- `hook_ids`: Array containing the hook ID used for this platform's opening
-- `platform`: The specific platform (e.g., "youtube_shorts", "instagram_reels", "tiktok", "linkedin")
+- `hook_ids`: Array containing the hook ID used for the opening
+- `platform`: "shortform"
 - `title`: Angle title (used as script reference title)
 - `shortform_structure`: The beat-based structure from Phase I
-  - `beats`: Array of beat objects
-  - `caption`: Post caption (IG/TikTok/LinkedIn) or empty string
-  - `hashtags`: Array of hashtag strings
-  - `cta`: Object with text, type, placement
-  - `estimated_duration`: Duration estimate or character count
+  - `beats`: Array of beat objects (with heil_label on each)
+  - `estimated_duration`: Duration estimate
+- `cross_post_notes`: Object containing platform-specific adjustments
+  - `youtube_shorts`: { `cta`: string, `notes`: [string] }
+  - `instagram_reels`: { `caption`: string, `hashtags`: [string], `audio_note`: string, `cta`: string }
+  - `tiktok`: { `sound_note`: string, `duration_tip`: string, `notes`: [string] }
 - `script_structure`: null (not used for shortform)
 - `filming_cards`: null (not used for shortform)
-- `estimated_duration`: Duration string (e.g., "30-45s") or character count for LinkedIn
+- `estimated_duration`: Duration string (e.g., "30-45s")
 - `status`: "draft"
 - `performance`: {} (empty — populated by /analyze)
 - `created_at`: Current ISO timestamp
 - `notes`: ""
 
-**Write one JSON line per platform** to `data/scripts.jsonl` (append, never overwrite).
+**Write one JSON line to `data/scripts.jsonl`** (append, never overwrite).
+
+### Save .md Script File
+
+After saving to `data/scripts.jsonl`, save a human-readable .md script file.
+
+**Script save path:** `/Users/user/Desktop/Development-Charlie-2/Charlieautomates/content/scripts/`
+
+**Check if folders exist first.** If the `content/scripts/` folder structure does not exist, ask (same prompt as Phase H). If yes, create them. If no, skip .md file saving.
+
+**File naming:** `SF - {slug}.md` where `{slug}` is a kebab-case version of the angle title.
+
+**Save to:** `/Users/user/Desktop/Development-Charlie-2/Charlieautomates/content/scripts/not-done/short-video/`
+
+**The .md file should contain:**
+- Title
+- Format: shortform
+- Date created
+- Angle ID reference
+- The full beat table
+- Cross-post notes for each platform
 
 **Display confirmation:**
 ```
+✓ Script saved: content/scripts/not-done/short-video/SF - {slug}.md
+```
+
+### Display Persistence Confirmation
+
+```
 ═══════════════════════════════════════════════════
-✓ Saved {N} shortform scripts to data/scripts.jsonl
+✓ Shortform script saved: {script_id}
 
-Platform        │ Script ID            │ Duration
-────────────────┼──────────────────────┼─────────
-YouTube Shorts  │ script_20260304_001  │ 30-45s
-Instagram Reels │ script_20260304_002  │ 30-45s
-TikTok          │ script_20260304_003  │ 15-30s
-LinkedIn        │ script_20260304_004  │ ~1,300 chars
+Title: "{title}"
+Duration: {estimated_duration}
+Platform: shortform (cross-post to Shorts/Reels/TikTok)
 
-Angle "{angle_title}" → {N} shortform scripts ready
+Hooks: {N} saved to data/hooks.jsonl
+Script: saved to data/scripts.jsonl
+File: content/scripts/not-done/short-video/SF - {slug}.md
 
 Next steps:
-  • Film your shorts using the beat tables above
-  • Copy your LinkedIn post directly from the output
+  • Film using the beat table above
+  • Adjust per platform using the cross-post notes
   • Run /viral:script {angle_id} --longform for a full YouTube script
-  • Add --pdf to any script command for a lead magnet PDF
 ═══════════════════════════════════════════════════
 ```
 
-**If --pdf was used:** After displaying the above confirmation, add:
+### LinkedIn Post Offer
+
+After displaying the persistence confirmation, offer a LinkedIn post:
+
+```
+═══════════════════════════════════════
+Want a LinkedIn post for this piece? [y/N]
+═══════════════════════════════════════
+```
+
+- Default is **No** (just pressing Enter skips it)
+- If yes:
+  1. Load linkedin angles from `data/angles.jsonl` with `format: "linkedin"` matching the same `topic_id` as the current angle
+  2. If matching linkedin angles exist, show them and ask which one to use as the basis
+  3. If no matching linkedin angles, generate a LinkedIn post directly from the script content using this structure:
+     - **Hook** (scroll-stopper first line)
+     - **Body** (value/story/list — 3-5 short paragraphs)
+     - **Closer** (reframe/insight)
+     - **CTA** (question for engagement)
+  4. Display the LinkedIn post
+  5. Ask to save it: "Save this LinkedIn post? [Y/n]"
+  6. If yes:
+     - Save to `data/scripts.jsonl` with `platform: "linkedin"`, generating a new script ID
+     - Save as .md file: `LI - {slug}.md` in `/Users/user/Desktop/Development-Charlie-2/Charlieautomates/content/scripts/not-done/linkedin-post/`
+     - Display: `✓ LinkedIn post saved: content/scripts/not-done/linkedin-post/LI - {slug}.md`
+
+**If --pdf was used:** After the LinkedIn offer (whether accepted or declined), add:
 ```
 Generating PDF lead magnet...
 ```
@@ -1012,24 +1147,11 @@ Phase K runs AFTER script persistence (Phase H for longform, Phase J for shortfo
 ### Step 1: Determine Script ID
 
 - **From longform (Phase H):** Use the single script_id that was just saved
-- **From shortform (Phase J):** Multiple scripts were saved (one per platform). Ask user:
-  ```
-  Multiple shortform scripts saved. Which one for the PDF?
-
-    1. YouTube Shorts  (script_20260304_001)
-    2. Instagram Reels  (script_20260304_002)
-    3. TikTok           (script_20260304_003)
-    4. LinkedIn          (script_20260304_004)
-    5. All of the above
-
-  Enter number:
-  ```
-  - If "5" or "all": generate one PDF per script
-  - Otherwise: generate for the selected script only
+- **From shortform (Phase J):** Use the single shortform script_id that was just saved
 
 ### Step 2: Generate PDF
 
-Run the PDF generation script for each selected script_id:
+Run the PDF generation script for the script_id:
 
 ```bash
 python3 scripts/generate-pdf.py --script-id {script_id}
@@ -1078,12 +1200,13 @@ Do NOT fail the entire command if PDF generation fails — scripts are already s
 ## Important Rules
 
 - **NEVER modify `data/agent-brain.json`** — script engine is read-only on the brain
-- **Full scripts ONLY with --longform or --shortform flag** — without either, command generates hooks only
+- **Full scripts require longform or shortform mode** — without either, command generates hooks only
 - **--longform and --shortform are mutually exclusive** — if both provided, error and exit
 - **--pdf requires --longform or --shortform** — can't generate PDF from hooks alone
 - **PDF generation uses external Python script** — requires reportlab (`pip install reportlab`)
 - **Short-form scripts use beats (timed actions), not sections** — beats are precise to the second
-- **LinkedIn posts are text-based, not beat-based** — format as a readable post, represent paragraphs as beats only for storage
+- **Shortform = ONE cross-platform script** — not separate scripts per platform. Cross-post notes handle platform differences.
+- **LinkedIn is its own format** — not part of shortform. LinkedIn posts are offered after longform or shortform scripts are saved.
 - **Scripts are conversational talking points, NOT verbatim teleprompter text** — keep it natural, the creator riffs on bullet points
 - **Every section must connect back to the angle's core contrast** — the contrast is the thread through the entire video
 - **NEVER use browser automation** — all data comes from local files
@@ -1093,3 +1216,4 @@ Do NOT fail the entire command if PDF generation fails — scripts are already s
 - **Save before displaying** — write JSONL first, then show summary (data persistence is priority)
 - **Platform-specific formatting is mandatory** — a YouTube longform hook is fundamentally different from a TikTok hook
 - **Filming cards are quick reference, not detailed scripts** — 2-3 bullet points per scene, visual direction, energy level
+- **Always save .md script files** — after JSONL persistence, save a human-readable .md to `content/scripts/not-done/{subfolder}/`
