@@ -1,16 +1,70 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 130" width="520" height="130">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 100" width="320" height="100">
   <defs>
     <linearGradient id="blue" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" style="stop-color:#60a5fa"/>
       <stop offset="100%" style="stop-color:#3b82f6"/>
     </linearGradient>
   </defs>
-  <text fill="url(#blue)" font-family="'SF Mono','Fira Code','Cascadia Code','Menlo','Consolas',monospace" font-size="18" font-weight="bold" xml:space="preserve">
-    <tspan x="50" y="25"> ██████╗ ██╗   ██╗██████╗ </tspan>
-    <tspan x="50" y="45">██╔════╝ ██║   ██║██╔══██╗</tspan>
-    <tspan x="50" y="65">██║  ███╗██║   ██║██████╔╝</tspan>
-    <tspan x="50" y="85">██║   ██║╚██╗ ██╔╝██╔══██╗</tspan>
-    <tspan x="50" y="105">╚██████╔╝ ╚████╔╝ ██████╔╝</tspan>
-    <tspan x="50" y="125"> ╚═════╝   ╚═══╝  ╚═════╝ </tspan>
-  </text>
+
+  <g fill="url(#blue)">
+    <!-- G letter -->
+    <rect x="10" y="6" width="12" height="12" rx="2"/>
+    <rect x="24" y="6" width="12" height="12" rx="2"/>
+    <rect x="38" y="6" width="12" height="12" rx="2"/>
+    <rect x="52" y="6" width="12" height="12" rx="2"/>
+    <rect x="66" y="6" width="12" height="12" rx="2"/>
+    <rect x="10" y="20" width="12" height="12" rx="2"/>
+    <rect x="24" y="20" width="12" height="12" rx="2"/>
+    <rect x="10" y="34" width="12" height="12" rx="2"/>
+    <rect x="10" y="48" width="12" height="12" rx="2"/>
+    <rect x="52" y="48" width="12" height="12" rx="2"/>
+    <rect x="66" y="48" width="12" height="12" rx="2"/>
+    <rect x="10" y="62" width="12" height="12" rx="2"/>
+    <rect x="66" y="34" width="12" height="12" rx="2"/>
+    <rect x="66" y="62" width="12" height="12" rx="2"/>
+    <rect x="10" y="76" width="12" height="12" rx="2"/>
+    <rect x="24" y="76" width="12" height="12" rx="2"/>
+    <rect x="38" y="76" width="12" height="12" rx="2"/>
+    <rect x="52" y="76" width="12" height="12" rx="2"/>
+    <rect x="66" y="76" width="12" height="12" rx="2"/>
+
+    <!-- V letter -->
+    <rect x="96" y="6" width="12" height="12" rx="2"/>
+    <rect x="110" y="6" width="12" height="12" rx="2"/>
+    <rect x="166" y="6" width="12" height="12" rx="2"/>
+    <rect x="180" y="6" width="12" height="12" rx="2"/>
+    <rect x="96" y="20" width="12" height="12" rx="2"/>
+    <rect x="110" y="20" width="12" height="12" rx="2"/>
+    <rect x="166" y="20" width="12" height="12" rx="2"/>
+    <rect x="180" y="20" width="12" height="12" rx="2"/>
+    <rect x="110" y="34" width="12" height="12" rx="2"/>
+    <rect x="124" y="34" width="12" height="12" rx="2"/>
+    <rect x="152" y="34" width="12" height="12" rx="2"/>
+    <rect x="166" y="34" width="12" height="12" rx="2"/>
+    <rect x="124" y="48" width="12" height="12" rx="2"/>
+    <rect x="138" y="48" width="12" height="12" rx="2"/>
+    <rect x="152" y="48" width="12" height="12" rx="2"/>
+    <rect x="138" y="62" width="12" height="12" rx="2"/>
+    <rect x="138" y="76" width="12" height="12" rx="2"/>
+
+    <!-- B letter -->
+    <rect x="210" y="6" width="12" height="12" rx="2"/>
+    <rect x="224" y="6" width="12" height="12" rx="2"/>
+    <rect x="238" y="6" width="12" height="12" rx="2"/>
+    <rect x="252" y="6" width="12" height="12" rx="2"/>
+    <rect x="210" y="20" width="12" height="12" rx="2"/>
+    <rect x="266" y="20" width="12" height="12" rx="2"/>
+    <rect x="210" y="34" width="12" height="12" rx="2"/>
+    <rect x="224" y="34" width="12" height="12" rx="2"/>
+    <rect x="238" y="34" width="12" height="12" rx="2"/>
+    <rect x="252" y="34" width="12" height="12" rx="2"/>
+    <rect x="210" y="48" width="12" height="12" rx="2"/>
+    <rect x="266" y="48" width="12" height="12" rx="2"/>
+    <rect x="210" y="62" width="12" height="12" rx="2"/>
+    <rect x="266" y="62" width="12" height="12" rx="2"/>
+    <rect x="210" y="76" width="12" height="12" rx="2"/>
+    <rect x="224" y="76" width="12" height="12" rx="2"/>
+    <rect x="238" y="76" width="12" height="12" rx="2"/>
+    <rect x="252" y="76" width="12" height="12" rx="2"/>
+  </g>
 </svg>

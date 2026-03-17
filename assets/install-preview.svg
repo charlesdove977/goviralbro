@@ -7,7 +7,6 @@
       .yellow { fill: #f9e2af; }
       .green { fill: #a6e3a1; }
       .text { fill: #cdd6f4; font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace; font-size: 13px; }
-      .blue { fill: #89b4fa; }
       .dim { fill: #6c7086; }
       .white { fill: #cdd6f4; font-weight: bold; }
       .cyan { fill: #89dceb; }
@@ -15,6 +14,10 @@
       .title-text { fill: #bac2de; font-family: 'SF Mono', monospace; font-size: 12px; }
       .prompt { fill: #6c7086; }
     </style>
+    <linearGradient id="blue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#60a5fa"/>
+      <stop offset="100%" style="stop-color:#3b82f6"/>
+    </linearGradient>
   </defs>
 
   <!-- Window -->
@@ -36,40 +39,98 @@
   <text class="prompt" x="20" y="65">~ $</text>
   <text class="text" x="52" y="65">bash scripts/init-viral-command.sh</text>
 
-  <!-- ASCII Logo -->
-  <text class="blue" x="20" y="95" font-family="'SF Mono','Fira Code','Cascadia Code','Menlo','Consolas',monospace" font-size="12" font-weight="bold"> ██████╗ ██╗   ██╗██████╗ </text>
-  <text class="blue" x="20" y="110" font-family="'SF Mono','Fira Code','Cascadia Code','Menlo','Consolas',monospace" font-size="12" font-weight="bold">██╔════╝ ██║   ██║██╔══██╗</text>
-  <text class="blue" x="20" y="125" font-family="'SF Mono','Fira Code','Cascadia Code','Menlo','Consolas',monospace" font-size="12" font-weight="bold">██║  ███╗██║   ██║██████╔╝</text>
-  <text class="blue" x="20" y="140" font-family="'SF Mono','Fira Code','Cascadia Code','Menlo','Consolas',monospace" font-size="12" font-weight="bold">██║   ██║╚██╗ ██╔╝██╔══██╗</text>
-  <text class="blue" x="20" y="155" font-family="'SF Mono','Fira Code','Cascadia Code','Menlo','Consolas',monospace" font-size="12" font-weight="bold">╚██████╔╝ ╚████╔╝ ██████╔╝</text>
-  <text class="blue" x="20" y="170" font-family="'SF Mono','Fira Code','Cascadia Code','Menlo','Consolas',monospace" font-size="12" font-weight="bold"> ╚═════╝   ╚═══╝  ╚═════╝ </text>
+  <!-- GVB Pixel Logo (rect-based for consistent rendering) -->
+  <g fill="url(#blue)">
+    <!-- G letter -->
+    <rect x="28" y="82" width="8" height="8" rx="1"/>
+    <rect x="37" y="82" width="8" height="8" rx="1"/>
+    <rect x="46" y="82" width="8" height="8" rx="1"/>
+    <rect x="55" y="82" width="8" height="8" rx="1"/>
+    <rect x="64" y="82" width="8" height="8" rx="1"/>
+    <rect x="28" y="91" width="8" height="8" rx="1"/>
+    <rect x="37" y="91" width="8" height="8" rx="1"/>
+    <rect x="28" y="100" width="8" height="8" rx="1"/>
+    <rect x="28" y="109" width="8" height="8" rx="1"/>
+    <rect x="55" y="109" width="8" height="8" rx="1"/>
+    <rect x="64" y="109" width="8" height="8" rx="1"/>
+    <rect x="28" y="118" width="8" height="8" rx="1"/>
+    <rect x="64" y="100" width="8" height="8" rx="1"/>
+    <rect x="64" y="118" width="8" height="8" rx="1"/>
+    <rect x="28" y="127" width="8" height="8" rx="1"/>
+    <rect x="37" y="127" width="8" height="8" rx="1"/>
+    <rect x="46" y="127" width="8" height="8" rx="1"/>
+    <rect x="55" y="127" width="8" height="8" rx="1"/>
+    <rect x="64" y="127" width="8" height="8" rx="1"/>
+
+    <!-- V letter -->
+    <rect x="86" y="82" width="8" height="8" rx="1"/>
+    <rect x="95" y="82" width="8" height="8" rx="1"/>
+    <rect x="140" y="82" width="8" height="8" rx="1"/>
+    <rect x="149" y="82" width="8" height="8" rx="1"/>
+    <rect x="86" y="91" width="8" height="8" rx="1"/>
+    <rect x="95" y="91" width="8" height="8" rx="1"/>
+    <rect x="140" y="91" width="8" height="8" rx="1"/>
+    <rect x="149" y="91" width="8" height="8" rx="1"/>
+    <rect x="95" y="100" width="8" height="8" rx="1"/>
+    <rect x="104" y="100" width="8" height="8" rx="1"/>
+    <rect x="131" y="100" width="8" height="8" rx="1"/>
+    <rect x="140" y="100" width="8" height="8" rx="1"/>
+    <rect x="104" y="109" width="8" height="8" rx="1"/>
+    <rect x="113" y="109" width="8" height="8" rx="1"/>
+    <rect x="122" y="109" width="8" height="8" rx="1"/>
+    <rect x="131" y="109" width="8" height="8" rx="1"/>
+    <rect x="113" y="118" width="8" height="8" rx="1"/>
+    <rect x="122" y="118" width="8" height="8" rx="1"/>
+    <rect x="113" y="127" width="8" height="8" rx="1"/>
+    <rect x="122" y="127" width="8" height="8" rx="1"/>
+
+    <!-- B letter -->
+    <rect x="171" y="82" width="8" height="8" rx="1"/>
+    <rect x="180" y="82" width="8" height="8" rx="1"/>
+    <rect x="189" y="82" width="8" height="8" rx="1"/>
+    <rect x="198" y="82" width="8" height="8" rx="1"/>
+    <rect x="171" y="91" width="8" height="8" rx="1"/>
+    <rect x="207" y="91" width="8" height="8" rx="1"/>
+    <rect x="171" y="100" width="8" height="8" rx="1"/>
+    <rect x="180" y="100" width="8" height="8" rx="1"/>
+    <rect x="189" y="100" width="8" height="8" rx="1"/>
+    <rect x="198" y="100" width="8" height="8" rx="1"/>
+    <rect x="171" y="109" width="8" height="8" rx="1"/>
+    <rect x="207" y="109" width="8" height="8" rx="1"/>
+    <rect x="171" y="118" width="8" height="8" rx="1"/>
+    <rect x="207" y="118" width="8" height="8" rx="1"/>
+    <rect x="171" y="127" width="8" height="8" rx="1"/>
+    <rect x="180" y="127" width="8" height="8" rx="1"/>
+    <rect x="189" y="127" width="8" height="8" rx="1"/>
+    <rect x="198" y="127" width="8" height="8" rx="1"/>
+  </g>
 
   <!-- Product name -->
-  <text class="white" x="20" y="200" font-family="monospace" font-size="13">   Go Viral Bitch</text>
-  <text class="dim" x="175" y="200" font-family="monospace" font-size="13">v0.1.0</text>
-  <text class="dim" x="20" y="218" font-family="monospace" font-size="12">   Trainable social media coaching system</text>
-  <text class="dim" x="20" y="234" font-family="monospace" font-size="12">   for Claude Code.</text>
+  <text class="white" x="28" y="160" font-family="'SF Mono',monospace" font-size="14" font-weight="bold">Go Viral Bitch</text>
+  <text class="dim" x="175" y="160" font-family="monospace" font-size="13">v0.1.0</text>
+  <text class="dim" x="28" y="178" font-family="monospace" font-size="12">Trainable social media coaching system</text>
+  <text class="dim" x="28" y="194" font-family="monospace" font-size="12">for Claude Code.</text>
 
   <!-- Status lines -->
-  <text class="green-text" x="20" y="265" font-family="monospace" font-size="13">✓</text>
-  <text class="text" x="36" y="265" font-family="monospace" font-size="13">Directories ready</text>
+  <text class="green-text" x="28" y="225" font-family="monospace" font-size="13">&#10003;</text>
+  <text class="text" x="44" y="225" font-family="monospace" font-size="13">Directories ready</text>
 
-  <text class="green-text" x="20" y="283" font-family="monospace" font-size="13">✓</text>
-  <text class="text" x="36" y="283" font-family="monospace" font-size="13">Data files initialized</text>
+  <text class="green-text" x="28" y="243" font-family="monospace" font-size="13">&#10003;</text>
+  <text class="text" x="44" y="243" font-family="monospace" font-size="13">Data files initialized</text>
 
-  <text class="green-text" x="20" y="301" font-family="monospace" font-size="13">✓</text>
-  <text class="text" x="36" y="301" font-family="monospace" font-size="13">Python dependencies installed</text>
+  <text class="green-text" x="28" y="261" font-family="monospace" font-size="13">&#10003;</text>
+  <text class="text" x="44" y="261" font-family="monospace" font-size="13">Python dependencies installed</text>
 
-  <text class="green-text" x="20" y="319" font-family="monospace" font-size="13">✓</text>
-  <text class="text" x="36" y="319" font-family="monospace" font-size="13">Installed Viral Command</text>
+  <text class="green-text" x="28" y="279" font-family="monospace" font-size="13">&#10003;</text>
+  <text class="text" x="44" y="279" font-family="monospace" font-size="13">Installed Viral Command</text>
 
   <!-- Done line -->
-  <text class="green-text" x="20" y="350" font-family="monospace" font-size="13" font-weight="bold">Done!</text>
-  <text class="text" x="62" y="350" font-family="monospace" font-size="13">Run</text>
-  <text class="cyan" x="92" y="350" font-family="monospace" font-size="13">/viral:setup</text>
-  <text class="text" x="195" y="350" font-family="monospace" font-size="13">to get started.</text>
+  <text class="green-text" x="28" y="310" font-family="monospace" font-size="13" font-weight="bold">Done!</text>
+  <text class="text" x="70" y="310" font-family="monospace" font-size="13">Run</text>
+  <text class="cyan" x="100" y="310" font-family="monospace" font-size="13">/viral:setup</text>
+  <text class="text" x="203" y="310" font-family="monospace" font-size="13">to get started.</text>
 
   <!-- Cursor -->
-  <text class="prompt" x="20" y="372">~ $</text>
-  <rect class="text" x="52" y="361" width="8" height="14" opacity="0.7"/>
+  <text class="prompt" x="28" y="340">~ $</text>
+  <rect fill="#cdd6f4" x="60" y="329" width="8" height="14" opacity="0.7"/>
 </svg>
