@@ -39,70 +39,73 @@
   <text class="prompt" x="20" y="65">~ $</text>
   <text class="text" x="52" y="65">bash scripts/init-viral-command.sh</text>
 
-  <!-- GVB Pixel Logo (rect-based for consistent rendering) -->
-  <g fill="url(#blue)">
-    <!-- G letter -->
-    <rect x="28" y="82" width="8" height="8" rx="1"/>
-    <rect x="37" y="82" width="8" height="8" rx="1"/>
-    <rect x="46" y="82" width="8" height="8" rx="1"/>
-    <rect x="55" y="82" width="8" height="8" rx="1"/>
-    <rect x="64" y="82" width="8" height="8" rx="1"/>
-    <rect x="28" y="91" width="8" height="8" rx="1"/>
-    <rect x="37" y="91" width="8" height="8" rx="1"/>
-    <rect x="28" y="100" width="8" height="8" rx="1"/>
-    <rect x="28" y="109" width="8" height="8" rx="1"/>
-    <rect x="55" y="109" width="8" height="8" rx="1"/>
-    <rect x="64" y="109" width="8" height="8" rx="1"/>
-    <rect x="28" y="118" width="8" height="8" rx="1"/>
-    <rect x="64" y="100" width="8" height="8" rx="1"/>
-    <rect x="64" y="118" width="8" height="8" rx="1"/>
-    <rect x="28" y="127" width="8" height="8" rx="1"/>
-    <rect x="37" y="127" width="8" height="8" rx="1"/>
-    <rect x="46" y="127" width="8" height="8" rx="1"/>
-    <rect x="55" y="127" width="8" height="8" rx="1"/>
-    <rect x="64" y="127" width="8" height="8" rx="1"/>
+  <!-- GVB Pixel Logo — same rects as gvb-logo.svg, scaled 0.5x -->
+  <g fill="url(#blue)" transform="translate(18,72) scale(0.5)">
+    <!-- G -->
+    <rect x="20" y="20" width="20" height="20" rx="2"/>
+    <rect x="40" y="20" width="20" height="20" rx="2"/>
+    <rect x="60" y="20" width="20" height="20" rx="2"/>
+    <rect x="80" y="20" width="20" height="20" rx="2"/>
+    <rect x="100" y="20" width="20" height="20" rx="2"/>
+    <rect x="20" y="40" width="20" height="20" rx="2"/>
+    <rect x="40" y="40" width="20" height="20" rx="2"/>
+    <rect x="20" y="60" width="20" height="20" rx="2"/>
+    <rect x="100" y="60" width="20" height="20" rx="2"/>
+    <rect x="20" y="80" width="20" height="20" rx="2"/>
+    <rect x="60" y="80" width="20" height="20" rx="2"/>
+    <rect x="80" y="80" width="20" height="20" rx="2"/>
+    <rect x="100" y="80" width="20" height="20" rx="2"/>
+    <rect x="20" y="100" width="20" height="20" rx="2"/>
+    <rect x="40" y="100" width="20" height="20" rx="2"/>
+    <rect x="100" y="100" width="20" height="20" rx="2"/>
+    <rect x="20" y="120" width="20" height="20" rx="2"/>
+    <rect x="40" y="120" width="20" height="20" rx="2"/>
+    <rect x="60" y="120" width="20" height="20" rx="2"/>
+    <rect x="80" y="120" width="20" height="20" rx="2"/>
+    <rect x="100" y="120" width="20" height="20" rx="2"/>
 
-    <!-- V letter -->
-    <rect x="86" y="82" width="8" height="8" rx="1"/>
-    <rect x="95" y="82" width="8" height="8" rx="1"/>
-    <rect x="140" y="82" width="8" height="8" rx="1"/>
-    <rect x="149" y="82" width="8" height="8" rx="1"/>
-    <rect x="86" y="91" width="8" height="8" rx="1"/>
-    <rect x="95" y="91" width="8" height="8" rx="1"/>
-    <rect x="140" y="91" width="8" height="8" rx="1"/>
-    <rect x="149" y="91" width="8" height="8" rx="1"/>
-    <rect x="95" y="100" width="8" height="8" rx="1"/>
-    <rect x="104" y="100" width="8" height="8" rx="1"/>
-    <rect x="131" y="100" width="8" height="8" rx="1"/>
-    <rect x="140" y="100" width="8" height="8" rx="1"/>
-    <rect x="104" y="109" width="8" height="8" rx="1"/>
-    <rect x="113" y="109" width="8" height="8" rx="1"/>
-    <rect x="122" y="109" width="8" height="8" rx="1"/>
-    <rect x="131" y="109" width="8" height="8" rx="1"/>
-    <rect x="113" y="118" width="8" height="8" rx="1"/>
-    <rect x="122" y="118" width="8" height="8" rx="1"/>
-    <rect x="113" y="127" width="8" height="8" rx="1"/>
-    <rect x="122" y="127" width="8" height="8" rx="1"/>
+    <!-- V -->
+    <rect x="150" y="20" width="20" height="20" rx="2"/>
+    <rect x="170" y="20" width="20" height="20" rx="2"/>
+    <rect x="250" y="20" width="20" height="20" rx="2"/>
+    <rect x="270" y="20" width="20" height="20" rx="2"/>
+    <rect x="150" y="40" width="20" height="20" rx="2"/>
+    <rect x="170" y="40" width="20" height="20" rx="2"/>
+    <rect x="250" y="40" width="20" height="20" rx="2"/>
+    <rect x="270" y="40" width="20" height="20" rx="2"/>
+    <rect x="170" y="60" width="20" height="20" rx="2"/>
+    <rect x="190" y="60" width="20" height="20" rx="2"/>
+    <rect x="230" y="60" width="20" height="20" rx="2"/>
+    <rect x="250" y="60" width="20" height="20" rx="2"/>
+    <rect x="170" y="80" width="20" height="20" rx="2"/>
+    <rect x="190" y="80" width="20" height="20" rx="2"/>
+    <rect x="230" y="80" width="20" height="20" rx="2"/>
+    <rect x="250" y="80" width="20" height="20" rx="2"/>
+    <rect x="190" y="100" width="20" height="20" rx="2"/>
+    <rect x="210" y="100" width="20" height="20" rx="2"/>
+    <rect x="230" y="100" width="20" height="20" rx="2"/>
+    <rect x="200" y="120" width="20" height="20" rx="2"/>
+    <rect x="220" y="120" width="20" height="20" rx="2"/>
 
-    <!-- B letter -->
-    <rect x="171" y="82" width="8" height="8" rx="1"/>
-    <rect x="180" y="82" width="8" height="8" rx="1"/>
-    <rect x="189" y="82" width="8" height="8" rx="1"/>
-    <rect x="198" y="82" width="8" height="8" rx="1"/>
-    <rect x="171" y="91" width="8" height="8" rx="1"/>
-    <rect x="207" y="91" width="8" height="8" rx="1"/>
-    <rect x="171" y="100" width="8" height="8" rx="1"/>
-    <rect x="180" y="100" width="8" height="8" rx="1"/>
-    <rect x="189" y="100" width="8" height="8" rx="1"/>
-    <rect x="198" y="100" width="8" height="8" rx="1"/>
-    <rect x="171" y="109" width="8" height="8" rx="1"/>
-    <rect x="207" y="109" width="8" height="8" rx="1"/>
-    <rect x="171" y="118" width="8" height="8" rx="1"/>
-    <rect x="207" y="118" width="8" height="8" rx="1"/>
-    <rect x="171" y="127" width="8" height="8" rx="1"/>
-    <rect x="180" y="127" width="8" height="8" rx="1"/>
-    <rect x="189" y="127" width="8" height="8" rx="1"/>
-    <rect x="198" y="127" width="8" height="8" rx="1"/>
+    <!-- B -->
+    <rect x="320" y="20" width="20" height="20" rx="2"/>
+    <rect x="340" y="20" width="20" height="20" rx="2"/>
+    <rect x="360" y="20" width="20" height="20" rx="2"/>
+    <rect x="380" y="20" width="20" height="20" rx="2"/>
+    <rect x="320" y="40" width="20" height="20" rx="2"/>
+    <rect x="400" y="40" width="20" height="20" rx="2"/>
+    <rect x="320" y="60" width="20" height="20" rx="2"/>
+    <rect x="340" y="60" width="20" height="20" rx="2"/>
+    <rect x="360" y="60" width="20" height="20" rx="2"/>
+    <rect x="380" y="60" width="20" height="20" rx="2"/>
+    <rect x="320" y="80" width="20" height="20" rx="2"/>
+    <rect x="400" y="80" width="20" height="20" rx="2"/>
+    <rect x="320" y="100" width="20" height="20" rx="2"/>
+    <rect x="400" y="100" width="20" height="20" rx="2"/>
+    <rect x="320" y="120" width="20" height="20" rx="2"/>
+    <rect x="340" y="120" width="20" height="20" rx="2"/>
+    <rect x="360" y="120" width="20" height="20" rx="2"/>
+    <rect x="380" y="120" width="20" height="20" rx="2"/>
   </g>
 
   <!-- Product name -->
