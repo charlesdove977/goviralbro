@@ -37,12 +37,12 @@
   <text class="text" x="52" y="65">bash scripts/init-viral-command.sh</text>
 
   <!-- ASCII Logo -->
-  <text class="blue" x="20" y="95" font-family="monospace" font-size="12">    ██████╗ ██╗   ██╗██████╗</text>
-  <text class="blue" x="20" y="110" font-family="monospace" font-size="12">   ██╔════╝ ██║   ██║██╔══██╗</text>
-  <text class="blue" x="20" y="125" font-family="monospace" font-size="12">   ██║  ███╗██║   ██║██████╔╝</text>
-  <text class="blue" x="20" y="140" font-family="monospace" font-size="12">   ██║   ██║╚██╗ ██╔╝██╔══██╗</text>
-  <text class="blue" x="20" y="155" font-family="monospace" font-size="12">   ╚██████╔╝ ╚████╔╝ ██████╔╝</text>
-  <text class="blue" x="20" y="170" font-family="monospace" font-size="12">    ╚═════╝   ╚═══╝  ╚═════╝</text>
+  <text class="blue" x="20" y="95" font-family="'SF Mono','Fira Code','Cascadia Code','Menlo','Consolas',monospace" font-size="12" font-weight="bold"> ██████╗ ██╗   ██╗██████╗ </text>
+  <text class="blue" x="20" y="110" font-family="'SF Mono','Fira Code','Cascadia Code','Menlo','Consolas',monospace" font-size="12" font-weight="bold">██╔════╝ ██║   ██║██╔══██╗</text>
+  <text class="blue" x="20" y="125" font-family="'SF Mono','Fira Code','Cascadia Code','Menlo','Consolas',monospace" font-size="12" font-weight="bold">██║  ███╗██║   ██║██████╔╝</text>
+  <text class="blue" x="20" y="140" font-family="'SF Mono','Fira Code','Cascadia Code','Menlo','Consolas',monospace" font-size="12" font-weight="bold">██║   ██║╚██╗ ██╔╝██╔══██╗</text>
+  <text class="blue" x="20" y="155" font-family="'SF Mono','Fira Code','Cascadia Code','Menlo','Consolas',monospace" font-size="12" font-weight="bold">╚██████╔╝ ╚████╔╝ ██████╔╝</text>
+  <text class="blue" x="20" y="170" font-family="'SF Mono','Fira Code','Cascadia Code','Menlo','Consolas',monospace" font-size="12" font-weight="bold"> ╚═════╝   ╚═══╝  ╚═════╝ </text>
 
   <!-- Product name -->
   <text class="white" x="20" y="200" font-family="monospace" font-size="13">   Go Viral Bitch</text>
