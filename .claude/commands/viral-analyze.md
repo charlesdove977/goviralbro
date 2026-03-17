@@ -9,9 +9,7 @@ $ARGUMENTS
 Parse for:
 - `--youtube` — Analyze YouTube content only
 - `--instagram` — Analyze Instagram content only
-- `--tiktok` — Analyze TikTok content only
-- `--linkedin` — Analyze LinkedIn content only
-- `--all` — Analyze all platforms (default if no platform flag)
+- `--all` — Analyze all supported platforms (default if no platform flag — YouTube + Instagram)
 - `--content-id [ID]` — Analyze a specific script by ID
 - `--recent [N]` — Analyze last N published pieces (default: 5)
 - `--manual` — Non-interactive mode for cron/automation (skips prompts, analyzes all published content, runs full pipeline A-H without pauses)
@@ -123,15 +121,17 @@ If `--manual` flag is present:
   - **Phase H**: Run feedback loop without confirmation prompts
 - Platform flags still respected: `--manual --youtube` analyzes only YouTube content non-interactively
 - If no platform flag with `--manual`: defaults to `--all`
-- **Important**: In manual mode, platforms without API access (TikTok, LinkedIn) are SKIPPED since they require interactive user input. YouTube (with API key) and Instagram (with Graph API token) collect data automatically. Platforms without configured APIs are skipped with a log message.
+- **Important**: In manual mode, only YouTube and Instagram are in scope. YouTube (with API key) and Instagram (with Graph API token) collect data automatically. If Instagram has no token, it is skipped (instaloader requires interactive input).
 
 ### Step 2: Determine Platform Scope
 
+**Supported platforms: YouTube and Instagram only.** TikTok and LinkedIn are not supported — ignore them regardless of what is in `platforms.posting` or what flags are passed.
+
 Based on flags:
-- If `--youtube`, `--instagram`, `--tiktok`, or `--linkedin`: analyze only that platform
-- If `--all` or no platform flag: analyze all platforms in `platforms.posting`
-- If `MANUAL_MODE`: filter to only platforms with API access (YouTube with API key, Instagram with Graph API token). Log skipped platforms: "Skipping [platform] — requires interactive input (not available in manual mode)"
-- Filter to only platforms the user actually posts on
+- If `--youtube`: scope = YouTube (longform + shorts) only
+- If `--instagram`: scope = Instagram Reels only
+- If `--all` or no platform flag: scope = YouTube + Instagram (always)
+- Never include TikTok or LinkedIn — skip any scripts with `platform: tiktok` or `platform: linkedin` silently
 
 ### Step 3: Determine API vs Interactive Mode
 
