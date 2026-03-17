@@ -936,6 +936,11 @@ APPLY TO YOUR NEXT VIDEO:
   → [1 specific visual/pacing recommendation]
 
 Failed downloads: [list titles + reason, or "none"]
+
+────────────────────────────────────────
+Next step: Run /viral:update-brain to push these patterns
+into your agent brain so future content uses what's winning.
+────────────────────────────────────────
 ════════════════════════════════════════
 ```
 
