@@ -9,7 +9,10 @@ $ARGUMENTS
 Parse for:
 - `--check` — Only run dependency check (Phase A), skip API setup
 - `--reconfig` — Reconfigure already-connected platforms
-- No flags — full setup flow (Phases A-D)
+- `--analytics` — Skip Phases A-D, go straight to Phase E (analytics connections only)
+- `--analytics --youtube` — Phase E.1 only (YouTube Analytics OAuth)
+- `--analytics --instagram` — Phase E.2 only (Instagram Graph API token)
+- No flags — full setup flow (Phases A-E)
 
 ---
 
@@ -422,6 +425,262 @@ Tips:
 
 ---
 
+## Phase E: Analytics Connections (Optional)
+
+**Runs automatically after Phase D completes, OR directly when `--analytics` flag is passed.**
+
+If `--analytics` flag is present: skip Phases A-D entirely, jump straight here.
+If `--analytics --youtube`: run E.1 only.
+If `--analytics --instagram`: run E.2 only.
+
+### Step 0: Check Already-Configured Analytics
+
+Read `data/agent-brain.json` → `platforms.api_keys_configured`.
+
+- If `"youtube_analytics_v2"` already present AND `~/.viral-command/yt-token.json` exists → YouTube Analytics: already configured. Skip E.1 unless `--reconfig` passed.
+- If `"instagram_graph_api"` already present AND `INSTAGRAM_ACCESS_TOKEN` set in `.env` → Instagram: already configured. Skip E.2 unless `--reconfig` passed.
+
+If both already configured (and no `--reconfig`):
+```
+════════════════════════════════════════
+Analytics Connections
+════════════════════════════════════════
+
+✓ YouTube Analytics — already connected
+✓ Instagram Graph API — already connected
+
+Run /viral:setup --analytics --reconfig to reconfigure.
+════════════════════════════════════════
+```
+Exit Phase E.
+
+### Step 1: Offer Analytics Setup
+
+Display:
+
+```
+════════════════════════════════════════
+Phase E: Analytics Connections (Optional)
+════════════════════════════════════════
+
+Your base setup is complete. Want to also connect analytics APIs?
+These let /viral:analyze pull YouTube CTR, retention, and subscriber
+data + Instagram reach, saves, and follower growth automatically —
+no more copy-pasting from Studio or the Instagram app.
+
+Would you like to set up analytics connections now?
+(yes / later)
+```
+
+**If "later":**
+```
+No problem. Run /viral:setup --analytics anytime to set this up.
+/viral:analyze will remind you when it detects missing connections.
+```
+Exit Phase E.
+
+**If "yes":** proceed to E.1 (YouTube) and/or E.2 (Instagram) based on flags.
+
+---
+
+### Phase E.1: YouTube Analytics (OAuth)
+
+**Skip if `--analytics --instagram` only.**
+
+Display:
+```
+────────────────────────────────────────
+E.1 — YouTube Analytics API (OAuth)
+────────────────────────────────────────
+
+This gives /viral:analyze automatic access to:
+  → Average view duration & watch time
+  → Subscribers gained per video
+  → Richer retention data
+
+Requires a Google Cloud project with YouTube Analytics API v2 enabled
+and a client_secret.json OAuth credentials file.
+
+```
+
+**Step E.1.1: Check for client_secret.json**
+
+```bash
+ls scripts/client_secret.json 2>/dev/null
+```
+
+- If present: "Found scripts/client_secret.json ✓"
+- If missing:
+  ```
+  client_secret.json not found at scripts/client_secret.json.
+
+  To get it:
+  1. Go to https://console.cloud.google.com
+  2. Select your project (or create one)
+  3. APIs & Services → Enable "YouTube Analytics API v2"
+  4. APIs & Services → Credentials → Create OAuth 2.0 Client ID
+  5. Application type: Desktop App
+  6. Download JSON → save as scripts/client_secret.json
+
+  Place the file, then re-run /viral:setup --analytics --youtube
+  ```
+  Skip E.1 and continue to E.2.
+
+**Step E.1.2: Run OAuth setup**
+
+```bash
+python scripts/setup-yt-oauth.py
+```
+
+- This opens a browser for Google OAuth consent
+- Token is saved to `~/.viral-command/yt-token.json`
+- If script exits 0: PASS → update brain (E.1.3)
+- If script exits non-zero: FAIL → show error, offer to retry
+
+**Step E.1.3: Update Brain**
+
+On success:
+- Read `data/agent-brain.json`
+- Append `"youtube_analytics_v2"` to `platforms.api_keys_configured` (if not already present)
+- Update `metadata.updated_at`
+- Write back to `data/agent-brain.json`
+
+Display:
+```
+✓ YouTube Analytics connected — ~/.viral-command/yt-token.json saved
+  /viral:analyze will now auto-fetch avg view duration, watch time, and subs gained.
+```
+
+---
+
+### Phase E.2: Instagram Graph API (Token)
+
+**Skip if `--analytics --youtube` only.**
+
+Display:
+```
+────────────────────────────────────────
+E.2 — Instagram Graph API Token
+────────────────────────────────────────
+
+This gives /viral:analyze automatic access to:
+  → Views, reach, saves per Reel
+  → Engagement rate
+  → Follower growth attributed to each post
+
+Requires a Facebook/Meta Business or Creator account with
+Instagram Graph API access approved.
+
+```
+
+**Step E.2.1: Check prerequisites**
+
+Ask:
+```
+Do you have a Meta Business/Creator account with Instagram Graph API access?
+(yes / no / not sure)
+```
+
+- If "no" or "not sure":
+  ```
+  You'll need to:
+  1. Convert your Instagram to a Professional account (Creator or Business)
+  2. Connect it to a Facebook Page
+  3. Create a Meta developer app at developers.facebook.com
+  4. Get app review approval for instagram_basic and instagram_manage_insights permissions
+
+  This is a one-time setup. When ready, run /viral:setup --analytics --instagram
+  ```
+  Skip E.2.
+
+**Step E.2.2: Run token setup**
+
+```bash
+python scripts/setup-ig-token.py
+```
+
+- This guides the user through the Meta token flow
+- On completion, writes to `.env`:
+  - `INSTAGRAM_ACCESS_TOKEN=...`
+  - `INSTAGRAM_BUSINESS_ACCOUNT_ID=...`
+- If script exits 0: PASS → update brain (E.2.3)
+- If script exits non-zero: FAIL → show error, offer to retry or skip
+
+**Step E.2.2a: If Meta Developer Portal is broken or inaccessible**
+
+If the user reports that developers.facebook.com is erroring (registration broken, "unexpected error", "unknown device", etc.), try these in order before giving up:
+
+**Option A — Graph API Explorer (while logged into Facebook)**
+```
+The Meta developer portal has been known to have registration issues.
+Try this while logged into facebook.com in the same browser:
+
+1. Go to: developers.facebook.com/tools/explorer
+2. If it loads without hitting registration, click "Generate Access Token"
+3. Grant permissions: instagram_basic, instagram_manage_insights, pages_show_list, pages_read_engagement
+4. Copy the token — run /viral:setup --analytics --instagram again and paste it when prompted
+
+This bypasses the broken registration form.
+```
+
+**Option B — Instaloader fallback (no token needed)**
+If Option A also fails or the user wants to skip the Meta hassle entirely:
+```
+No problem — skipping Instagram Graph API for now.
+
+What you still get with instaloader (already installed):
+  ✓ Public view counts on Reels
+  ✓ Like and comment counts
+  ✓ Posting cadence tracking for competitors
+
+What requires the Graph API (private metrics):
+  ✗ Reach and impressions
+  ✗ Saves
+  ✗ Follower growth per post
+
+/viral:analyze will use instaloader automatically as fallback.
+Run /viral:setup --analytics --instagram when Meta sorts itself out.
+```
+Exit E.2 gracefully — do NOT mark instagram_graph_api as configured in the brain.
+
+**Step E.2.3: Update Brain**
+
+On success:
+- Read `data/agent-brain.json`
+- Append `"instagram_graph_api"` to `platforms.api_keys_configured` (if not already present)
+- Update `metadata.updated_at`
+- Write back to `data/agent-brain.json`
+
+Display:
+```
+✓ Instagram Graph API connected — token saved to .env
+  /viral:analyze will now auto-fetch Reel views, reach, saves, and follower data.
+
+⚠ Token expires in 60 days. Refresh it with: bash scripts/refresh-ig-token.sh
+  (Run this monthly to stay connected)
+```
+
+---
+
+### Phase E Summary
+
+Display after completing whichever sub-phases ran:
+
+```
+════════════════════════════════════════
+ANALYTICS CONNECTIONS
+════════════════════════════════════════
+
+{list each connection with ✓ connected, ✗ failed, or ○ skipped}
+
+────────────────────────────────────────
+/viral:analyze will now auto-pull analytics for connected platforms.
+Run /viral:setup --analytics anytime to add or reconfigure connections.
+════════════════════════════════════════
+```
+
+---
+
 ## Important Rules
 
 1. **Security first** — API keys in `.env` ONLY. Never echo keys back to the user after they enter them. Never write keys to agent-brain.json or any tracked file.
@@ -430,3 +689,4 @@ Tips:
 4. **Read before write** — always read `.env` and `agent-brain.json` before modifying. Preserve existing content.
 5. **One thing at a time** — don't overwhelm the user. One platform, one key, one verification at a time.
 6. **Be helpful on errors** — if YouTube says "quotaExceeded", explain what that means. If OpenAI says "invalid_api_key", say "Double-check the key at platform.openai.com."
+7. **Phase E is always optional** — "later" is a valid answer at any point in Phase E. Never pressure the user to connect analytics.

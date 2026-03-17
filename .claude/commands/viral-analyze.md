@@ -28,6 +28,89 @@ Read `data/agent-brain.json` and extract:
 - `platforms.api_keys_configured` — which APIs are set up
 - `performance_patterns.total_content_analyzed` — how much data we have
 
+### Step 1.2: Analytics Connection Detection
+
+**Skip this step if `--manual` flag is present.**
+
+Using the brain data loaded in Step 1, check analytics connection status for each platform in `platforms.posting`:
+
+**YouTube Analytics:**
+- Connected if: `"youtube_analytics_v2"` in `api_keys_configured` AND `~/.viral-command/yt-token.json` exists
+- Missing if: either condition is false
+
+**Instagram Graph API:**
+- Connected if: `"instagram_graph_api"` in `api_keys_configured` AND `INSTAGRAM_ACCESS_TOKEN` set in `.env`
+- Missing if: either condition is false
+
+**If all relevant connections are present (or platform not in scope):** Skip to Step 1.5 silently. No output.
+
+**If any connections are missing for platforms in scope:**
+
+Display a status table:
+```
+════════════════════════════════════════
+ANALYTICS CONNECTIONS
+════════════════════════════════════════
+
+  YouTube Analytics    [CONNECTED / NOT SET UP]
+  Instagram Graph API  [CONNECTED / NOT SET UP]
+
+════════════════════════════════════════
+```
+
+Only show rows for platforms the user actually posts on (from `platforms.posting`).
+
+**If Instagram Graph API is NOT SET UP**, show this choice immediately after the table:
+
+```
+────────────────────────────────────────
+Instagram is not connected. How do you want to handle it?
+
+  1. Set up properly (Meta developer portal)
+     → Automatic: pulls views, reach, saves, follower growth
+     → One-time setup, takes ~10 min
+     → Run: /viral:setup --analytics --instagram
+
+  2. Use instaloader instead (quick fix, already installed)
+     → Gets: view counts, likes, comments on public Reels
+     → Missing: reach, saves, follower growth (private metrics)
+     → No setup needed — works right now
+
+  3. Skip for now — enter Instagram metrics manually each run
+
+Choose (1 / 2 / 3):
+────────────────────────────────────────
+```
+
+**If "1" (Meta developer portal):**
+- Run the Phase E.2 sub-flow from `/viral:setup` inline
+- After successful connection, update `agent-brain.json` exactly as Phase E.2.3 does
+- Show: "Instagram connected. Continuing analyze run..."
+- Then proceed to Step 1.5
+
+**If "2" (instaloader):**
+- Set `INSTAGRAM_MODE = "instaloader"` for this session
+- Show: "Got it — using instaloader for public Instagram metrics."
+- Continue to Step 1.5. When Phase C/D reaches Instagram, collect what instaloader can provide (views, likes, comments) and skip prompts for reach/saves/follower growth
+- Do NOT mark `instagram_graph_api` as configured in the brain
+
+**If "3" (skip / manual):**
+- Continue in manual input mode (prompts will appear per-platform in Phase C/D as normal)
+- Set a flag `REMIND_ANALYTICS = true` to show a reminder at the end of Phase F
+
+**If only YouTube Analytics is missing (no Instagram issue):**
+- Show: "Set up missing connections? (yes / later)"
+- **If "yes":** Run Phase E.1 sub-flow from `/viral:setup` inline, update brain, then proceed to Step 1.5
+- **If "later":** Continue in manual input mode, set `REMIND_ANALYTICS = true`
+
+**REMIND_ANALYTICS reminder** (show at end of Phase F Step 4, if flag is set):
+```
+────────────────────────────────────────
+💡 Connect analytics APIs to skip manual entry:
+   /viral:setup --analytics
+────────────────────────────────────────
+```
+
 ### Step 1.5: Detect Manual Mode
 
 If `--manual` flag is present:

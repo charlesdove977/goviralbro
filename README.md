@@ -62,7 +62,7 @@ git clone https://github.com/charlesdove977/goviralbitch.git && cd goviralbitch 
 | `/viral:discover` | Pull competitor winning content — engagement data, transcripts, hook skeletons |
 | `/viral:angle` | Contrast Formula angle development — 5 angles per format (longform/shortform/LinkedIn) |
 | `/viral:script` | Interactive script generator — pick format → pick angle → hooks + full script + PDF option |
-| `/viral:analyze` 🚧 | Multi-platform analytics + winner extraction + feedback loop |
+| `/viral:analyze` | Multi-platform analytics + winner extraction + feedback loop |
 | `/viral:ideas` 🚧 | Idea board CRUD + pipeline funnel + content repurposing |
 | `/viral:status` 🚧 | Pipeline dashboard — funnel, calendar, brain health |
 | `/viral:update-brain` | Brain evolution protocol + insight aggregation |
