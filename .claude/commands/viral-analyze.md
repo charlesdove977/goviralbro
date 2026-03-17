@@ -15,6 +15,7 @@ Parse for:
 - `--content-id [ID]` — Analyze a specific script by ID
 - `--recent [N]` — Analyze last N published pieces (default: 5)
 - `--manual` — Non-interactive mode for cron/automation (skips prompts, analyzes all published content, runs full pipeline A-H without pauses)
+- `--deep-analysis` — Skip straight to Phase G.6 top 10 ranking + transcript/visual analysis (no new analytics collection — uses existing data)
 
 ---
 
@@ -759,6 +760,186 @@ If pillar data insufficient: `   Not enough pillar data yet.`
 
 **Sort** each category by win rate descending.
 **Key Insight** generation: Find the single dimension value with the highest win rate (minimum 2 data points). If two dimensions both have 60%+ win rate, combine them into a combo insight.
+
+---
+
+## Phase G.6: Top 10 Winner Ranking + Deep Analysis Offer
+
+**Runs after Phase G.5**, using ALL analytics data (current + historical).
+
+### Step 1: Build the All-Time Top 10 List
+
+Read ALL entries from `data/analytics/analytics.jsonl`. Filter to `is_winner: true`.
+
+If fewer than 1 winner total: skip Phase G.6.
+
+For all winners, calculate a **composite score** to rank them:
+- Score = `(views / platform_median_views) * 0.4 + (engagement_rate / platform_median_engagement) * 0.35 + (subscribers_gained / platform_median_subs) * 0.25`
+- Skip any component where the metric is null (normalize weight across remaining components)
+- Sort descending by composite score, take top 10
+
+### Step 2: Display Ranked Table
+
+```
+════════════════════════════════════════
+🏆 TOP 10 WINNING CONTENT (all time)
+════════════════════════════════════════
+
+ #  │ Title                              │ Platform          │ Views   │ Eng%  │ Subs+ │ Link
+────┼────────────────────────────────────┼───────────────────┼─────────┼───────┼───────┼──────────────────────────
+ 1  │ [title]                            │ [platform]        │ [N]     │ [N%]  │ [N]   │ [source_url or "no url"]
+ 2  │ [title]                            │ [platform]        │ [N]     │ [N%]  │ [N]   │ [source_url or "no url"]
+ 3  │ [title]                            │ [platform]        │ [N]     │ [N%]  │ [N]   │ [source_url or "no url"]
+...
+10  │ [title]                            │ [platform]        │ [N]     │ [N%]  │ [N]   │ [source_url or "no url"]
+
+════════════════════════════════════════
+```
+
+- If `source_url` is null for an entry, show "no url"
+- Show actual URL (full link, clickable in terminal) — not shortened
+
+### Step 3: Offer Manual Review or Auto-Analyze
+
+Ask:
+```
+Want to go deeper on these winners?
+
+  [M] Manual — I'll click the links and review them myself
+  [A] Auto-analyze — run transcript + visual hook analysis now
+
+→
+```
+
+**If user chooses M (manual):**
+- Display: "Got it — links are above. Come back and run /viral:analyze --deep-analysis to run transcript + visual analysis anytime."
+- Skip to Phase H.
+
+**If user chooses A (auto-analyze):**
+- Proceed to Step 4.
+
+### Step 4: Select Depth
+
+Ask:
+```
+Analyze how many?
+
+  [3] Top 3
+  [5] Top 5
+  [10] All 10
+
+→
+```
+
+Accept `3`, `5`, `10`, or the words "top 3", "top 5", "all". Default to 3 if user just presses Enter.
+
+Slice the winner list to the chosen count. Skip any entries where:
+- `source_url` is null AND platform is not YouTube (can't auto-fetch without URL)
+- Platform is not YouTube or Instagram (TikTok/LinkedIn have no supported auto-fetch)
+
+Display: `"Analyzing [N] pieces — this may take a few minutes..."`
+
+### Step 5: Transcript + Visual Analysis
+
+For each selected winner, run the same analysis as `/viral:discover` Step 4 + Step 5:
+
+**For YouTube (longform or shorts):**
+
+```bash
+# Extract video ID from source_url
+VIDEO_ID=$(echo "[source_url]" | sed 's/.*[?&]v=\([^&]*\).*/\1/; s|.*/shorts/\([^?]*\).*|\1|')
+
+# Download first 60s (longform) or 30s (shorts)
+yt-dlp --external-downloader ffmpeg \
+  --external-downloader-args "ffmpeg_i:-t 60" \
+  -f "bestvideo[ext=mp4][height<=720]" \
+  -o "/tmp/vc_winner_${VIDEO_ID}.%(ext)s" \
+  "[source_url]"
+
+# Extract frames (1 per second, max 20 frames for longform / 15 for shorts)
+ffmpeg -i "/tmp/vc_winner_${VIDEO_ID}.mp4" \
+  -vf "fps=1,scale=640:-1" \
+  -frames:v 20 \
+  "/tmp/vc_winner_${VIDEO_ID}_frame_%03d.jpg" -y
+```
+
+Then read the frames via the Read tool (as images) and analyze them.
+
+**For Instagram Reels:**
+
+If `source_url` is an Instagram URL:
+```bash
+yt-dlp -f "bestvideo[ext=mp4][height<=720]" \
+  -o "/tmp/vc_winner_ig_%(id)s.%(ext)s" \
+  "[source_url]"
+
+ffmpeg -i "/tmp/vc_winner_ig_[id].mp4" \
+  -vf "fps=1,scale=640:-1" \
+  -frames:v 15 \
+  "/tmp/vc_winner_ig_[id]_frame_%03d.jpg" -y
+```
+
+**If download fails for any piece:** Log the error and continue to the next. Show all failures in the summary.
+
+### Step 6: Display Deep Analysis Per Winner
+
+For each winner analyzed, display:
+
+```
+────────────────────────────────────────
+🏆 #[rank]: [title]
+Platform: [platform] | Published: [date] | Views: [N] | Eng: [N%]
+Link: [source_url]
+────────────────────────────────────────
+
+VERBAL HOOK (first 3-5 seconds):
+  Opening line: "[exact words spoken]"
+  Hook pattern: [contradiction / specificity / timeframe_tension / etc.]
+  Hook strength: [weak / moderate / strong / excellent]
+  Why it works: [1 sentence]
+
+VISUAL HOOK (first 3 seconds on screen):
+  On screen: [what's shown — person, text, graphic, action]
+  Text overlays: [any text visible in first 3s or "none"]
+  Visual type: [talking-head / screen-recording / b-roll / text-only / etc.]
+  Pattern interrupt: [yes — describe / no]
+  Pacing: [slow / medium / fast / cut-heavy]
+
+WHAT'S SHOWN (0:03–0:20):
+  [description of the visual content — what draws attention, what's happening]
+
+WHY THIS WON:
+  [1-2 sentences connecting the hook/visual style to the performance metrics]
+  Proof: [N] views / [N%] engagement / +[N] subs
+```
+
+### Step 7: Winner Analysis Summary
+
+After all pieces are analyzed, display:
+
+```
+════════════════════════════════════════
+WINNER ANALYSIS COMPLETE
+════════════════════════════════════════
+
+Analyzed: [N] of [N selected]
+Failed:   [N] (listed below if any)
+
+COMMON PATTERNS IN YOUR TOP CONTENT:
+  Hook patterns: [most common across winners]
+  Visual type:   [most common]
+  Pattern interrupt: [% that used one]
+  Opening style: [observation about what winners open with]
+
+APPLY TO YOUR NEXT VIDEO:
+  → [1 specific hook recommendation based on what's winning]
+  → [1 specific visual/pacing recommendation]
+
+Failed downloads: [list titles + reason, or "none"]
+════════════════════════════════════════
+```
+
+After displaying, skip to Phase H.
 
 ---
 
