@@ -59,7 +59,7 @@ git clone https://github.com/charlesdove977/goviralbitch.git && cd goviralbitch 
 |---------|-------------|
 | `/viral:setup` | Platform connection wizard — dependency check, API config, verification |
 | `/viral:onboard` | Interactive agent brain setup — ICP, pillars, platforms, competitors |
-| `/viral:discover` | Pull competitor winning content — engagement data, transcripts, hook skeletons |
+| `/viral:discover` | Topic discovery — competitor scrape, YouTube/Reddit/GitHub keyword search, or both |
 | `/viral:angle` | Contrast Formula angle development — 5 angles per format (longform/shortform/LinkedIn) |
 | `/viral:script` | Interactive script generator — pick format → pick angle → hooks + full script + PDF option |
 | `/viral:analyze` | Multi-platform analytics + winner extraction + feedback loop |
@@ -74,7 +74,7 @@ git clone https://github.com/charlesdove977/goviralbitch.git && cd goviralbitch 
 - **HookGenie engine** — 6 hook patterns with composite scoring
 - **Format-based angles** — 5 angles per format (longform, shortform, LinkedIn) = 15 takes per topic
 - **PDF lead magnet generation** from any script
-- **Discovery**: YouTube + Instagram live now — TikTok, LinkedIn, Reddit, X, Hacker News + more coming
+- **Discovery**: Competitor scraping (YouTube + Instagram) + keyword search (YouTube, Reddit, GitHub) — uses your brain's pillar keywords
 - **Monetization coaching** baked into every output
 
 ---

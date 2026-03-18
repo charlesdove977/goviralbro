@@ -1,8 +1,17 @@
 # /viral:discover — Multi-Platform Topic Discovery
 
-You are running the Viral Command discovery engine. Your primary job is to analyze competitor content performance, then optionally discover trending topics — all scored against the creator's ICP.
+You are running the Viral Command discovery engine. Your job is to find winning content ideas through competitor analysis, keyword-based search (YouTube, Reddit, GitHub), or both — all scored against the creator's ICP.
 
 **Arguments:** $ARGUMENTS
+
+**Flags:**
+| Flag | Description |
+|------|-------------|
+| `--competitors` | Skip mode selection, run competitor scrape only |
+| `--keywords` | Skip mode selection, run keyword search only (YouTube + Reddit + GitHub) |
+| `--all` | Skip mode selection, run both competitor scrape + keyword search |
+| `--deep` | Use deep mode for trend queries (slower, more thorough) |
+| (none) | Interactive — asks which discovery mode to use |
 
 ---
 
@@ -27,9 +36,57 @@ Stop and say: *"Your agent brain isn't set up yet. Run `/viral:onboard` first to
 
 ---
 
+## Phase A.5: Discovery Mode Selection
+
+**Show the creator their current discovery keywords from the brain, then ask how they want to discover:**
+
+```
+═══════════════════════════════════════════════════
+DISCOVERY KEYWORDS (from your agent brain)
+═══════════════════════════════════════════════════
+
+{For each pillar in pillars[]:}
+{pillar.name}: {pillar.keywords[], comma-separated}
+
+═══════════════════════════════════════════════════
+
+These keywords drive YouTube Search, Reddit, and GitHub discovery.
+To update them permanently, run /viral:onboard or /viral:update-brain.
+
+How do you want to discover today?
+
+  [C] Competitor scrape — analyze your competitors' recent content
+  [K] Keyword search — search YouTube, Reddit, and GitHub for what's trending
+  [B] Both — competitor scrape + keyword search
+
+Choice [C/K/B]:
+```
+
+**Wait for user input.**
+
+- If user says anything about updating/changing/editing keywords before choosing a mode, let them edit for THIS session only:
+  - Show current keywords
+  - Accept additions or removals
+  - Use the modified list for this run
+  - Note: *"Using modified keywords for this session. Run /viral:update-brain to save permanently."*
+
+- Store the choice as `DISCOVERY_MODE` (competitor / keyword / both)
+- **If `--competitors` flag in arguments:** skip this prompt, set `DISCOVERY_MODE = competitor`
+- **If `--keywords` flag in arguments:** skip this prompt, set `DISCOVERY_MODE = keyword`
+- **If `--all` flag in arguments:** skip this prompt, set `DISCOVERY_MODE = both`
+
+**Based on DISCOVERY_MODE:**
+- `competitor` → Run Phase 1 only, skip Phase 1.5
+- `keyword` → Skip Phase 1, run Phase 1.5 only
+- `both` → Run Phase 1, then Phase 1.5
+
+---
+
 ## Phase 1: Competitor Analysis (Core)
 
-This is the main event. Pull and rank competitor **longform** content from the last 30 days.
+**Skip this phase if `DISCOVERY_MODE = keyword`.**
+
+Pull and rank competitor **longform** content from the last 30 days.
 
 **IMPORTANT: Longform only.** Filter out YouTube Shorts and any video under 5 minutes. We only care about longform content (5+ minutes) for competitor analysis. Shorts have different dynamics and aren't useful for longform content strategy.
 
@@ -477,6 +534,140 @@ These hooks will appear as inspiration options next time you run:
 
 ---
 
+## Phase 1.5: Keyword Search Discovery
+
+**Skip this phase if `DISCOVERY_MODE = competitor`.**
+
+Search YouTube, Reddit, and GitHub using the creator's pillar keywords to find what's trending RIGHT NOW.
+
+### Step 1: Build Search Queries
+
+Combine pillar keywords into 3-5 focused search queries. Prioritize keywords that appear across multiple pillars (higher signal). Use the session-modified keywords if the user edited them in Phase A.5.
+
+Example for pillars with keywords ["Claude Code", "AI agents", "MCP servers"]:
+- "Claude Code" (exact match — highest priority)
+- "AI agents automation" (combined)
+- "MCP servers Claude" (combined)
+
+### Step 2: YouTube Search
+
+For each query, hit the YouTube Data API `search.list`:
+
+```bash
+source "$(pwd)/.env" 2>/dev/null || source "$(dirname "$(pwd)")/.env" 2>/dev/null
+
+# Search YouTube for trending content (last 7 days, sorted by view count)
+PUBLISHED_AFTER=$(date -u -v-7d '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null || date -u -d '7 days ago' '+%Y-%m-%dT%H:%M:%SZ')
+
+curl -s "https://www.googleapis.com/youtube/v3/search?part=snippet&q=${QUERY}&type=video&order=viewCount&publishedAfter=${PUBLISHED_AFTER}&maxResults=10&key=${YOUTUBE_DATA_API_KEY}"
+```
+
+Then fetch stats for the returned video IDs:
+```bash
+curl -s "https://www.googleapis.com/youtube/v3/videos?part=statistics,contentDetails&id=${VIDEO_IDS}&key=${YOUTUBE_DATA_API_KEY}"
+```
+
+**Extract per result:**
+- Title, channel name, video URL
+- Views, likes, comments, engagement rate
+- Duration (filter: keep both longform and shorts — label each)
+- Published date
+
+### Step 3: Reddit Search
+
+For each query, hit the Reddit JSON API (no auth needed):
+
+```bash
+# Search Reddit for trending posts (last week, sorted by top)
+# URL-encode the query
+ENCODED_QUERY=$(python3 -c "import urllib.parse; print(urllib.parse.quote('${QUERY}'))")
+
+curl -s -H "User-Agent: ViralCommand/1.0" "https://www.reddit.com/search.json?q=${ENCODED_QUERY}&sort=top&t=week&limit=10"
+```
+
+**Also check specific subreddits if relevant to the creator's niche:**
+```bash
+# Check niche subreddits
+curl -s -H "User-Agent: ViralCommand/1.0" "https://www.reddit.com/r/ClaudeAI/top.json?t=week&limit=10"
+curl -s -H "User-Agent: ViralCommand/1.0" "https://www.reddit.com/r/ChatGPT/top.json?t=week&limit=10"
+curl -s -H "User-Agent: ViralCommand/1.0" "https://www.reddit.com/r/artificial/top.json?t=week&limit=10"
+```
+
+**Extract per result:**
+- Post title, subreddit, URL
+- Upvotes (score), comment count
+- Post age
+
+### Step 4: GitHub Search
+
+Search for trending repos and discussions:
+
+```bash
+# Search GitHub for trending repos (created in last 7 days, sorted by stars)
+CREATED_AFTER=$(date -u -v-7d '+%Y-%m-%d' 2>/dev/null || date -u -d '7 days ago' '+%Y-%m-%d')
+
+gh api "search/repositories?q=${QUERY}+created:>${CREATED_AFTER}&sort=stars&order=desc&per_page=10" 2>/dev/null
+```
+
+If `gh` is not available, fall back to the REST API:
+```bash
+curl -s "https://api.github.com/search/repositories?q=${QUERY}+created:>${CREATED_AFTER}&sort=stars&order=desc&per_page=10"
+```
+
+**Extract per result:**
+- Repo name, description, URL
+- Stars, forks, language
+- Created date
+
+### Step 5: Display Keyword Search Results
+
+```
+═══════════════════════════════════════════════════
+KEYWORD SEARCH RESULTS
+═══════════════════════════════════════════════════
+Keywords searched: {list of queries used}
+
+YOUTUBE ({N} results)
+───────────────────────────────────────────────────
+ #  │ Title                                    │ Channel           │ Views    │ Eng%   │ Age
+────┼──────────────────────────────────────────┼───────────────────┼──────────┼────────┼──────
+ 1  │ {title}                                  │ {channel}         │ {views}  │ {rate} │ {days}d
+    │ https://youtube.com/watch?v=...          │                   │          │        │
+────┼──────────────────────────────────────────┼───────────────────┼──────────┼────────┼──────
+...
+
+REDDIT ({N} results)
+───────────────────────────────────────────────────
+ #  │ Title                                    │ Subreddit         │ Upvotes  │ Comments │ Age
+────┼──────────────────────────────────────────┼───────────────────┼──────────┼──────────┼──────
+ 1  │ {title}                                  │ r/{sub}           │ {score}  │ {count}  │ {days}d
+    │ https://reddit.com/r/...                 │                   │          │          │
+────┼──────────────────────────────────────────┼───────────────────┼──────────┼──────────┼──────
+...
+
+GITHUB ({N} results)
+───────────────────────────────────────────────────
+ #  │ Repo                                     │ Description       │ Stars    │ Language │ Age
+────┼──────────────────────────────────────────┼───────────────────┼──────────┼──────────┼──────
+ 1  │ {owner/repo}                             │ {desc, 40 chars}  │ {stars}  │ {lang}   │ {days}d
+    │ https://github.com/{owner/repo}          │                   │          │          │
+────┼──────────────────────────────────────────┼───────────────────┼──────────┼──────────┼──────
+...
+
+═══════════════════════════════════════════════════
+```
+
+**After displaying results:** If `DISCOVERY_MODE = keyword` (no competitor phase), ask if the user wants to transcribe any YouTube videos from the results (same flow as Phase 1 Step 4). If `DISCOVERY_MODE = both`, combine these results with competitor results before the transcription prompt.
+
+**Rules:**
+- Reddit rate limit: 1 request per 2 seconds — add `sleep 2` between Reddit API calls
+- GitHub API: unauthenticated = 10 requests/minute — stay under this
+- YouTube API: uses same quota as competitor search — max 5 queries to conserve quota
+- If any platform returns 0 results or errors, note it and continue with the others
+- De-duplicate: if a YouTube video appears in both competitor scrape AND keyword search, show it once with both sources noted
+
+---
+
 ## Phase 2: Trend Discovery (Optional)
 
 After the competitor report, ask:
@@ -604,7 +795,7 @@ Write discovered topics to a date-stamped JSONL file:
   "title": "Topic title — clear, specific, content-ready",
   "description": "Why this topic matters and why it's trending",
   "source": {
-    "platform": "youtube|instagram|reddit|x|web|hackernews",
+    "platform": "youtube|youtube_search|instagram|reddit|github|x|web|hackernews",
     "url": "https://source-url",
     "author": "Original author / competitor name",
     "engagement_signals": "500K views, 15K likes, 3.2% engagement"
@@ -643,10 +834,21 @@ Write discovered topics to a date-stamped JSONL file:
 DISCOVERY COMPLETE
 ═══════════════════════════════════════════════════
 
+Discovery mode: {competitor / keyword / both}
+
+{If competitor mode or both:}
 Competitors analyzed: {N}
   YouTube: {list handles} — {N} videos pulled
   Instagram: {list handles} — {N} posts pulled
 Transcriptions done: {N} ({N} verbal + {N} visual)
+
+{If keyword mode or both:}
+Keyword search results:
+  YouTube Search: {N} results across {N} queries
+  Reddit: {N} posts from {N} subreddits
+  GitHub: {N} repos trending
+  Keywords used: {list of queries}
+
 Trend queries run: {N} (or "skipped")
 Total topics scored: {N} → {N saved} (after dedup + threshold)
 Saved to: data/topics/{YYYY-MM-DD}-topics.jsonl
