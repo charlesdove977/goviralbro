@@ -15,6 +15,18 @@ You are running the Viral Command discovery engine. Your job is to find winning 
 
 ---
 
+## ⚠️ EXECUTION ORDER — READ THIS FIRST
+
+**You MUST follow this exact sequence. Do NOT skip steps or jump ahead.**
+
+1. **Phase A**: Load agent brain (read `data/agent-brain.json`)
+2. **Phase A.5**: Show keywords table + ask discovery mode [C/K/B] — **STOP HERE AND WAIT FOR USER INPUT**
+3. **Only after user responds**: proceed to Phase 1 (competitor), Phase 1.5 (keyword), or both
+
+**The #1 rule: After loading the brain, your VERY FIRST output to the user must be the keyword table and mode selector from Phase A.5. Do NOT start fetching YouTube data, Instagram data, or any API calls before the user picks a mode. No exceptions.**
+
+---
+
 ## Phase A: Load Agent Brain
 
 Read the agent brain to understand who the creator is:
