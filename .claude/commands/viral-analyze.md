@@ -355,6 +355,24 @@ Run instaloader to pull account post metadata:
 
 ```bash
 mkdir -p /tmp/viral-analyze-ig
+
+# PRE-FLIGHT: instaloader freshness check (run ONCE per session)
+# Instagram changes its API frequently — stale instaloader = 403/login errors
+if [ -z "$INSTALOADER_CHECKED" ]; then
+  INSTA_AGE_DAYS=$(python3 -c "
+import importlib.metadata, datetime, re
+v = importlib.metadata.version('instaloader')
+parts = [int(x) for x in re.findall(r'\d+', v)[:3]]
+d = datetime.datetime(parts[0] + (2000 if parts[0] < 100 else 0), parts[1], parts[2])
+print((datetime.datetime.now() - d).days)
+" 2>/dev/null || echo "999")
+  if [ "$INSTA_AGE_DAYS" -gt 60 ]; then
+    echo "⚠ instaloader is ${INSTA_AGE_DAYS} days old — updating to avoid Instagram 403 blocks..."
+    pip3 install -U instaloader 2>&1 | tail -2
+  fi
+  INSTALOADER_CHECKED=1
+fi
+
 python3 -m instaloader --no-pictures --no-videos --no-video-thumbnails \
   --post-metadata-txt="" --dirname-pattern="/tmp/viral-analyze-ig/{profile}" \
   -- @{INSTAGRAM_HANDLE}
@@ -1193,19 +1211,54 @@ For each selected winner, run the same analysis as `/viral:discover` Step 4 + St
 # Extract video ID from source_url
 VIDEO_ID=$(echo "[source_url]" | sed 's/.*[?&]v=\([^&]*\).*/\1/; s|.*/shorts/\([^?]*\).*|\1|')
 
-# Attempt 1: download with ffmpeg time limit (fastest)
-yt-dlp --download-sections "*0-60" \
+# PRE-FLIGHT: yt-dlp freshness check (run ONCE before first download in batch)
+# YouTube changes bot detection frequently — stale yt-dlp = 403 errors, hung downloads
+# Only runs once per session (guard with YT_DLP_CHECKED variable)
+if [ -z "$YT_DLP_CHECKED" ]; then
+  YTDLP_AGE_DAYS=$(python3 -c "
+import subprocess, datetime
+v = subprocess.check_output(['yt-dlp', '--version']).decode().strip()
+d = datetime.datetime.strptime(v, '%Y.%m.%d')
+print((datetime.datetime.now() - d).days)
+" 2>/dev/null || echo "999")
+  if [ "$YTDLP_AGE_DAYS" -gt 30 ]; then
+    echo "⚠ yt-dlp is ${YTDLP_AGE_DAYS} days old — updating to avoid YouTube 403 blocks..."
+    pip3 install -U yt-dlp 2>&1 | tail -2
+  fi
+  YT_DLP_CHECKED=1
+fi
+
+# Download strategy (3 attempts):
+# 1. Chrome cookies (bypasses SABR/bot detection on newer YouTube videos)
+# 2. No cookies, format filter (works for older videos / no Chrome environments)
+# 3. Best format, no cert check (last resort)
+
+# Attempt 1: Chrome cookies + format filter (bypasses SABR/bot detection)
+yt-dlp --cookies-from-browser chrome --download-sections "*0-60" \
   -f "bestvideo[ext=mp4][height<=720]/bestvideo[height<=720]/best[height<=720]" \
   -o "/tmp/vc_winner_${VIDEO_ID}.%(ext)s" \
   "[source_url]" 2>/tmp/yt_err_${VIDEO_ID}.txt
 
-# If Attempt 1 fails (JS challenge / bot detection), retry without format filter
+# Attempt 2: No cookies, format filter (for environments without Chrome)
+if [ $? -ne 0 ]; then
+  yt-dlp --download-sections "*0-60" \
+    -f "bestvideo[ext=mp4][height<=720]/bestvideo[height<=720]/best[height<=720]" \
+    -o "/tmp/vc_winner_${VIDEO_ID}.%(ext)s" \
+    "[source_url]" 2>>/tmp/yt_err_${VIDEO_ID}.txt
+fi
+
+# Attempt 3: Best format, no cert check (last resort)
 if [ $? -ne 0 ]; then
   yt-dlp --download-sections "*0-60" \
     -f "best" \
     --no-check-certificates \
     -o "/tmp/vc_winner_${VIDEO_ID}.%(ext)s" \
     "[source_url]" 2>>/tmp/yt_err_${VIDEO_ID}.txt
+  if [ $? -ne 0 ]; then
+    echo "⚠ [${TITLE}]: download failed after 3 attempts — $(tail -1 /tmp/yt_err_${VIDEO_ID}.txt)"
+    # Mark as download_failed, add to FAILURES list: {title, url, all 3 attempt errors from yt_err file, status: download_failed}
+    # Continue to next video — do NOT abort the batch
+  fi
 fi
 
 # Find the downloaded file (extension may vary)
@@ -1217,9 +1270,15 @@ if [ -n "$VID_FILE" ]; then
   ffmpeg -i "$VID_FILE" \
     -vf "fps=1,scale=640:-1" \
     -frames:v $FRAMES \
-    "/tmp/vc_winner_${VIDEO_ID}_frame_%03d.jpg" -y 2>/dev/null
+    "/tmp/vc_winner_${VIDEO_ID}_frame_%03d.jpg" -y 2>/tmp/vc_winner_${VIDEO_ID}_ffmpeg_err.txt
+  if [ $? -ne 0 ]; then
+    echo "⚠ [${TITLE}]: frame extraction failed — $(tail -1 /tmp/vc_winner_${VIDEO_ID}_ffmpeg_err.txt)"
+    # Add to FAILURES list: {title, step: "frame extraction", error: last line of err}
+    # Proceed with transcript-only analysis (graceful degradation — no visual)
+  fi
 else
-  echo "DOWNLOAD_FAILED: $(cat /tmp/yt_err_${VIDEO_ID}.txt | tail -3)"
+  echo "⚠ [${TITLE}]: download failed — $(tail -3 /tmp/yt_err_${VIDEO_ID}.txt)"
+  # Mark as download_failed, add to FAILURES list
 fi
 ```
 
@@ -1249,14 +1308,36 @@ Then find the `.mp4` file in `/tmp/vc_ig_{SHORTCODE}/` and extract frames with f
 
 If instaloader fails, fall back to yt-dlp:
 ```bash
-yt-dlp -f "best[ext=mp4]/best" -o "/tmp/vc_winner_ig_${SHORTCODE}.%(ext)s" "[source_url]"
+yt-dlp --cookies-from-browser chrome -f "best[ext=mp4]/best" -o "/tmp/vc_winner_ig_${SHORTCODE}.%(ext)s" "[source_url]" 2>/tmp/vc_ig_err_${SHORTCODE}.txt
+if [ $? -ne 0 ]; then
+  echo "⚠ [${TITLE}]: Instagram download failed (both instaloader + yt-dlp) — $(tail -1 /tmp/vc_ig_err_${SHORTCODE}.txt)"
+  # Mark as download_failed, add to FAILURES list: {title, url, step: "Instagram download", error: combined instaloader + yt-dlp errors}
+  # Continue to next video — do NOT abort the batch
+fi
 ```
 
-**If download fails for any piece:** Log title + error reason, mark as `download_failed`, continue to the next. Show all failures in the summary.
+**If download fails for any piece:** Log title + error reason, mark as `download_failed`, continue to the next. Show all failures in the summary. Never silently skip a failed video.
 
 ### Step 4b: Display Deep Analysis Per Winner
 
 For each winner analyzed, display:
+
+**If `download_failed`** — show the video in the results list but with a failure notice instead of analysis:
+
+```
+────────────────────────────────────────
+⚠ #[rank]: [title]
+Platform: [platform] | Published: [date] | Views: [N] | Eng: [N%]
+Link: [source_url]
+────────────────────────────────────────
+
+⚠ Download failed — skipped
+  Error: [error message from yt-dlp/instaloader, 1 line]
+  All 3 attempts failed. Check yt-dlp + Chrome cookies.
+────────────────────────────────────────
+```
+
+**If analysis succeeded** — show the full breakdown:
 
 ```
 ────────────────────────────────────────
@@ -1277,6 +1358,7 @@ VISUAL HOOK (first 3 seconds on screen):
   Visual type: [talking-head / screen-recording / b-roll / text-only / etc.]
   Pattern interrupt: [yes — describe / no]
   Pacing: [slow / medium / fast / cut-heavy]
+  [If frame extraction failed: "⚠ Visual unavailable — frame extraction failed. Transcript-only analysis below."]
 
 WHAT'S SHOWN (0:03–0:20):
   [description of the visual content — what draws attention, what's happening]
@@ -1296,7 +1378,26 @@ WINNER ANALYSIS COMPLETE
 ════════════════════════════════════════
 
 Analyzed: [N] of [N selected]
-Failed:   [N] (listed below if any)
+Failed:   [N] of [N selected] (see failures below)
+
+{If any failures:}
+FAILURES
+────────────────────────────────────────
+ #  │ Title                           │ Step Failed         │ Error                          │ Retryable
+────┼─────────────────────────────────┼─────────────────────┼────────────────────────────────┼──────────
+ 1  │ [title]                         │ [download/frames]   │ [error msg, 1 line]            │ [YES/NO]
+────┼─────────────────────────────────┼─────────────────────┼────────────────────────────────┼──────────
+...
+
+{If ALL selected videos failed:}
+⚠ All downloads failed. Diagnostic tips:
+  1. Check Chrome is installed and you're logged into YouTube
+  2. Run: yt-dlp --cookies-from-browser chrome --print title "https://youtube.com/watch?v=dQw4w9WgXcQ"
+  3. Check version: yt-dlp --version (must be 2024.01+)
+  4. Update: pip install -U yt-dlp
+────────────────────────────────────────
+
+{If no failures: "None — all downloads and extractions succeeded."}
 
 COMMON PATTERNS IN YOUR TOP CONTENT:
   Hook patterns: [most common across winners]
@@ -1307,8 +1408,6 @@ COMMON PATTERNS IN YOUR TOP CONTENT:
 APPLY TO YOUR NEXT VIDEO:
   → [1 specific hook recommendation based on what's winning]
   → [1 specific visual/pacing recommendation]
-
-Failed downloads: [list titles + reason, or "none"]
 
 ────────────────────────────────────────
 Next step: Run /viral:update-brain to push these patterns

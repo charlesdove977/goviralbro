@@ -197,6 +197,56 @@
         "pattern_interrupt": { "type": "number", "minimum": 0, "default": 0 }
       }
     },
+    "visual_patterns": {
+      "type": "object",
+      "description": "Aggregated visual performance data from deep analysis runs",
+      "properties": {
+        "top_visual_types": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": { "type": "string", "enum": ["face_reaction", "screen_demo", "result_reveal", "text_hook", "b_roll_contrast", "talking_head", "pattern_interrupt_visual", "split_screen"] },
+              "avg_engagement": { "type": "number" },
+              "sample_count": { "type": "integer" },
+              "trend": { "type": "string", "enum": ["rising", "stable", "declining"] }
+            }
+          }
+        },
+        "top_pattern_interrupts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": { "type": "string" },
+              "avg_engagement": { "type": "number" },
+              "sample_count": { "type": "integer" }
+            }
+          }
+        },
+        "text_overlay_colors": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "avg_views": { "type": "number" },
+              "avg_engagement": { "type": "number" },
+              "sample_count": { "type": "integer" }
+            }
+          }
+        },
+        "pacing_performance": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "avg_engagement": { "type": "number" },
+              "sample_count": { "type": "integer" }
+            }
+          }
+        }
+      }
+    },
     "performance_patterns": {
       "type": "object",
       "description": "Aggregated performance insights discovered through analysis cycles",

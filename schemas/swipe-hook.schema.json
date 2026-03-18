@@ -83,6 +83,34 @@
       "default": 0,
       "description": "How many times this swipe hook has influenced a /viral:script run"
     },
+    "visual_hook": {
+      "type": "object",
+      "description": "Visual hook analysis from video frame extraction (populated by /viral:discover Step 4)",
+      "properties": {
+        "on_screen": {
+          "type": "string",
+          "description": "What appears on screen in first 3 seconds"
+        },
+        "text_overlays": {
+          "type": "string",
+          "description": "Any text overlaid on the video"
+        },
+        "visual_type": {
+          "type": "string",
+          "enum": ["talking_head", "screen_recording", "split_screen", "b_roll", "text_only", "branded_graphic", "other"],
+          "description": "Primary visual style"
+        },
+        "pattern_interrupt": {
+          "type": "boolean",
+          "description": "Whether the visual breaks expected scroll patterns"
+        },
+        "pacing": {
+          "type": "string",
+          "enum": ["fast", "moderate", "slow"],
+          "description": "Editing pace in the first 3-5 seconds"
+        }
+      }
+    },
     "notes": {
       "type": "string",
       "default": ""

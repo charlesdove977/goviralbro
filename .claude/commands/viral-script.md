@@ -17,6 +17,7 @@ Read the agent brain to understand the creator's identity and preferences:
 **Extract these fields:**
 - `identity` — name, brand, niche, tone, differentiator
 - `hook_preferences` — pattern weights (boost patterns the creator prefers)
+- `visual_patterns` — visual performance data (top_visual_types, text_overlay_colors, pacing_performance) — may be empty
 - `monetization` — primary_funnel, cta_strategy
 - `platforms.posting[]` — where this creator publishes
 
@@ -91,7 +92,8 @@ Begin interactive format selection:
 
      1. Longform video (YouTube)
      2. Shortform video (Shorts/Reels/TikTok)
-     3. Just hooks (no script)
+     3. LinkedIn post
+     4. Just hooks (no script)
 
    Enter number:
    ═══════════════════════════════════════
@@ -127,289 +129,251 @@ Begin interactive format selection:
    - If no draft shortform angles exist: "No draft angles found for shortform. Run `/viral:angle` first."
    - After selection, proceed with `--shortform` behavior (hooks → shortform script)
 
-   **If "3" (just hooks):**
+   **If "3" (LinkedIn post):**
+   - Filter `data/angles.jsonl` for angles with `format: "linkedin"` and `status: "draft"`
+   - Show the 5 most recent matching angles (same table format as above)
+   - If no draft LinkedIn angles exist: "No draft angles found for LinkedIn. Run `/viral:angle` first."
+   - After selection, proceed with LinkedIn behavior (hooks → LinkedIn post generation → save .md)
+
+   **If "4" (just hooks):**
    - Show ALL draft angles (any format), using the same table format
    - After selection, generate hooks only (no script generation — skip Phase F/G/H and Phase I/J)
 
-**Output of this phase:** An angle object with: title, contrast (common_belief, surprising_truth, contrast_strength), platform, target_audience, proof_method, funnel_direction. Plus a mode flag: `longform`, `shortform`, or `hooks_only`.
+**Output of this phase:** An angle object with: title, contrast (common_belief, surprising_truth, contrast_strength), format, target_audience, proof_method, funnel_direction. Plus a mode flag: `longform`, `shortform`, `linkedin`, or `hooks_only`.
 
 ---
 
-## Phase B: HookGenie Engine — Generate Hooks
+## Phase B: Brain Context + Hook Generation (Format-Specific)
 
-For each platform in `platforms.posting[]`, generate hooks using **ALL 6 patterns**:
+**This phase generates exactly 10 hooks for the SELECTED FORMAT ONLY: 5 brain-influenced + 5 swipe-influenced.**
 
-### Pattern 1: Contradiction
-- **Formula:** "Everyone says {common_belief}, but {surprising_truth}"
-- **Variations:**
-  - "The biggest lie about {topic}..."
-  - "{common_belief}? That's dead wrong."
-  - "I believed {common_belief} for years. Then I discovered {truth}."
-- **Best for:** strong/extreme contrasts
-- **Platform notes:** Works everywhere, especially YouTube thumbnails/titles and LinkedIn openers
+Format labels used throughout (never platform-specific):
+- **Longform** — works for YouTube longform, podcast, etc.
+- **Shortform** — works for YouTube Shorts, Instagram Reels, TikTok
+- **LinkedIn** — plain text only, professional tone
 
-### Pattern 2: Specificity
-- **Formula:** "I {specific_result} in {specific_timeframe}"
-- **Variations:**
-  - "How I {achieved X} with {specific tool/method}"
-  - "The exact {process} I used to {result}"
-  - "{Specific_number} {things} that {specific_outcome}"
-- **Best for:** demo, data, case study proof methods
-- **Platform notes:** YouTube longform titles, LinkedIn credibility builders
+### Step 1: Show Brain Context (READ-ONLY)
 
-### Pattern 3: Timeframe Tension
-- **Formula:** "In {surprisingly_short_time}, I {impressive_result}"
-- **Variations:**
-  - "{Timeframe} ago, I {before_state}. Now I {after_state}."
-  - "What happens when you {action} for {time}"
-  - "I went from {before} to {after} in {time}."
-- **Best for:** before/after, transformation stories
-- **Platform notes:** Short-form gold (Reels, TikTok), YouTube Shorts
+Read from agent brain (`data/agent-brain.json`) and display performance data BEFORE generating any hooks. This gives the user context on what has worked.
 
-### Pattern 4: POV as Advice
-- **Formula:** "Stop {common_practice}. {better_alternative}."
-- **Variations:**
-  - "If you're still {common_practice}, you're {consequence}"
-  - "The {old_way} is dead. Here's what replaced it."
-  - "Nobody should be {common_practice} in {current_year}."
-- **Best for:** moderate-strong contrasts, educational content
-- **Platform notes:** LinkedIn (authoritative tone), YouTube (commanding opener)
+**hook_preferences:**
+- Show which patterns have the highest learned weights as a table
+- If any pattern has weight > 0: display ranked table of patterns by weight
+- If all weights are 0: "No performance data yet — all patterns weighted equally"
 
-### Pattern 5: Vulnerable Confession
-- **Formula:** "I was wrong about {common_belief}. {what_changed}."
-- **Variations:**
-  - "I spent {time/money} on {wrong_approach} before discovering {truth}"
-  - "Nobody talks about the {hidden_downside} of {popular_thing}"
-  - "Here's what I wish someone told me about {topic}."
-- **Best for:** building trust, personal brand, LinkedIn
-- **Platform notes:** LinkedIn (authenticity), YouTube longform (personal story angle)
+**visual_patterns (if populated):**
+- Show top visual type by engagement: "Your top visual type is **{type}** ({avg_engagement}% avg, {sample_count} samples)"
+- Show best text overlay color: "Text overlays in **{color}** average {avg_views} views vs {other_color} at {other_views}"
+- Show pacing preference: "**{speed}** pacing averages {avg_engagement}% engagement"
+- If visual_patterns is empty: skip this section silently
 
-### Pattern 6: Pattern Interrupt
-- **Formula:** Unexpected opening that breaks scroll behavior
-- **Techniques:** Start mid-action, unusual visual, counter-intuitive statement, sound effect cue
-- **Variations:**
-  - "{surprising_statement}. Let me explain."
-  - "This {object} just {impossible_action}."
-  - "[action happening on screen] — and that's why {lesson}"
-  - "Don't scroll past this if you {audience_qualifier}."
-- **Best for:** short-form (Reels, TikTok, Shorts)
-- **Platform notes:** TikTok/Reels (visual-first), YouTube Shorts (pattern break in feed)
+**performance_patterns (if populated):**
+- Show top performing topics from `performance_patterns.running_averages`
+- If empty: skip silently
 
-### Scoring Each Hook
+Display format:
+```
+═══════════════════════════════════════════════════
+BRAIN CONTEXT — What Your Data Says Works
+═══════════════════════════════════════════════════
 
-For every hook generated, compute:
+Hook Pattern Performance:
+ Pattern              │ Weight │ Status
+──────────────────────┼────────┼──────────
+ contradiction        │  0.79  │ Top performer
+ pattern_interrupt    │  0.65  │ Strong
+ specificity          │  0.42  │ Moderate
+ ...
 
-1. **contrast_fit** (0-10): How well does this hook leverage the common_belief → surprising_truth gap?
-   - 10: Hook directly states or implies both A and B
-   - 7-9: Hook strongly references the contrast
-   - 4-6: Hook loosely connects to the contrast
-   - 1-3: Weak connection to the angle's contrast
+Visual Intelligence:
+• Top visual type: {type} ({avg_engagement}% avg, {n} samples)
+• Best text overlay: {color} ({avg_views} views)
+• Pacing: {speed} ({avg_engagement}% engagement)
 
-2. **pattern_strength** (0-10): How well does this pattern match the content type?
-   - Consider: proof_method, contrast_strength, topic type
-   - demo proof + specificity pattern = high score
-   - mild contrast + contradiction pattern = lower score
+───────────────────────────────────────────────────
+Generating hooks informed by this data...
+═══════════════════════════════════════════════════
+```
 
-3. **platform_fit** (0-10): How native does this hook feel for the target platform?
-   - YouTube longform: conversational, curiosity-driven = high
-   - Short-form: punchy, under 10 words, visual = high
-   - LinkedIn: professional, statement form = high
+**No user input needed — this is context display only.** Proceed immediately to Step 2.
 
-4. **composite**: `contrast_fit * 0.4 + pattern_strength * 0.35 + platform_fit * 0.25`
+**If the brain has no hook_preferences AND no visual_patterns AND no performance_patterns:**
+- Show: "No performance data yet — generating hooks with equal pattern weighting."
+- Skip the display box, proceed to Step 2.
 
-5. **Apply brain hook_preferences:**
-   - If `hook_preferences.{pattern}` > 0, boost composite by that amount (capped at 10)
-   - This lets the system learn which patterns work for this creator over time
-   - If all preferences are 0 (new brain), apply no boost — show all patterns equally
+### Step 2: Generate 5 Brain-Influenced Hooks
 
-6. **3 C's Hook Quality Check (shortform hooks only):**
-   For hooks targeting youtube_shorts, instagram_reels, or tiktok, evaluate against Context + Contrarian + Intrigue:
-   - **Context**: Does the hook ground the viewer in a recognizable situation or world? (not abstract)
-   - **Contrarian**: Does the hook challenge what they currently believe or do?
-   - **Intrigue**: Does the hook create an open loop or unanswered question?
+Generate exactly **5 hooks** for the SELECTED FORMAT using the 6 hook patterns, weighted by brain data.
 
-   Scoring adjustment:
-   - All 3 present: **+0.5** to composite score
-   - Only 1 present: **-0.5** to composite score
-   - 0 present: Flag in output: "Weak hook — missing 3 C's" and apply **-0.5**
-   - 2 present: No adjustment (neutral)
+**Pattern selection:** Use `hook_preferences` scores to decide which 5 of the 6 patterns to use. Favor higher-weighted patterns but ensure variety — at minimum 3 different patterns across the 5 hooks. If brain has no data, select the 5 best-fitting patterns for the angle's contrast strength and proof method.
 
-   This check does NOT apply to youtube_longform or linkedin hooks.
+**Hook patterns available** (same as before):
+1. **Contradiction** — "Everyone says {common_belief}, but {surprising_truth}"
+2. **Specificity** — "I {specific_result} in {specific_timeframe}"
+3. **Timeframe Tension** — "In {surprisingly_short_time}, I {impressive_result}"
+4. **POV as Advice** — "Stop {common_practice}. {better_alternative}."
+5. **Vulnerable Confession** — "I was wrong about {common_belief}. {what_changed}."
+6. **Pattern Interrupt** — Unexpected opening that breaks scroll behavior
 
----
+**Format-specific generation rules:**
 
-## Phase C: Platform Formatting
-
-Apply platform-specific formatting after generating hooks:
-
-**youtube_longform:**
+**Longform hooks:**
 - Hook as spoken opening line (conversational, 10-15 words)
-- Suggest a title derived from the hook (curiosity + clarity)
-- No visual_cue needed (not applicable)
+- Include a title suggestion derived from each hook (curiosity + clarity)
+- No visual_cue needed
 
-**youtube_shorts / instagram_reels / tiktok:**
+**Shortform hooks:**
 - Hook follows 3-second rule (punchy, under 10 words ideal)
 - visual_cue REQUIRED: What to show on screen in first 3 seconds
-  - Examples: "Screen recording of AI agent running", "Split screen: before vs after", "Close-up of dashboard metrics"
 - Text overlay suggestion if applicable
+- **Visual patterns advisory:** If `visual_patterns` has data, suggest top-performing visual type and text overlay color. If empty, skip.
+- **3 C's Quality Check:** Evaluate each hook against Context + Contrarian + Intrigue:
+  - All 3 present: **+0.5** to composite
+  - Only 1 present: **-0.5** to composite
+  - 0 present: Flag "Weak hook — missing 3 C's" and **-0.5**
+  - 2 present: No adjustment
 
-**linkedin:**
+**LinkedIn hooks — CRITICAL:**
 - Hook as text-first bold opener (professional, provocative statement)
 - First line must standalone (LinkedIn truncates after ~2 lines)
-- No visual_cue (text-only platform)
+- **Plain text ONLY — NO em dashes (—), NO double dashes (--), NO emojis in the hook line**
+- Professional tone, conversational language
+- No visual_cue (text-only)
 
----
+**Scoring each hook:**
 
-## Phase D: Rank and Display
+1. **contrast_fit** (0-10): How well does this hook leverage the common_belief → surprising_truth gap?
+2. **pattern_strength** (0-10): How well does this pattern match the content type?
+3. **platform_fit** (0-10): How native does this hook feel for the format?
+   - Longform: conversational, curiosity-driven = high
+   - Shortform: punchy, under 10 words, visual = high
+   - LinkedIn: professional, statement form = high
+4. **composite**: `contrast_fit * 0.4 + pattern_strength * 0.35 + platform_fit * 0.25`
+5. **Brain boost:** If `hook_preferences.{pattern}` > 0, boost composite by that amount (capped at 10)
 
-Rank all hooks by composite score (highest first). Display:
+Label these hooks: **"Brain-Weighted (patterns your data says work best)"**
+
+### Step 3: Generate 5 Swipe-Influenced Hooks
+
+**This step is skipped silently if no relevant swipe data exists.** If skipped, display 5 additional brain-influenced hooks instead (total still 10).
+
+Scan `data/recon/swipe/` and `data/hooks/hook-repo.jsonl` for entries relevant to the current angle.
+
+**Relevance matching:**
+1. Extract keywords from angle title, common_belief, surprising_truth (skip stop words)
+2. Compare against each swipe entry's `topic_keywords` array
+3. Relevant = at least 1 keyword match OR broad topic domain overlap (AI, automation, agency, clients, revenue)
+
+**Generate exactly 5 swipe-influenced hooks** for the SELECTED FORMAT ONLY:
+
+- The swipe hook is **structural inspiration only** — take the energy, rhythm, pattern type, NOT the content
+- NEVER copy or closely paraphrase the competitor's hook text
+- Express CHARLES'S angle and contrast in his voice/tone from `identity.tone`
+- **Self-hooks** (competitor = "charlieautomates (self)") are Charles's own proven winners — reuse the structural formula with NEW topic content. Prioritize these when scores are close.
+- Apply the same scoring system as Step 2 (contrast_fit, pattern_strength, platform_fit, composite + brain boost)
+- Maximum 5 swipe entries queried, 1 hook per entry
+- **LinkedIn swipe hooks:** Same plain text rules — NO em dashes, NO double dashes, NO emojis
+
+Label these hooks: **"Swipe-Inspired (structure borrowed from proven competitor hooks)"**
+
+### Step 4: Display All 10 Hooks + Recommend
+
+Display all hooks in a single unified view, separated into two labeled sections:
 
 ```
 ═══════════════════════════════════════════════════
-HOOKS GENERATED: {Angle Title}
+HOOKS: {Angle Title} — {FORMAT}
 ═══════════════════════════════════════════════════
 
 From angle: {angle_id} — "{title}"
 Contrast: "{common_belief}" → "{surprising_truth}" [{strength}]
-Proof method: {proof_method}
 
 ───────────────────────────────────────────────────
-📺 YOUTUBE LONGFORM
+Brain-Weighted (patterns your data says work best)
 ───────────────────────────────────────────────────
 
- #  │ Score │ Pattern              │ Hook
-────┼───────┼──────────────────────┼──────────────────────────────────
- 1  │  8.5  │ contradiction        │ "{hook_text}"
- 2  │  8.2  │ specificity          │ "{hook_text}"
- 3  │  7.8  │ timeframe_tension    │ "{hook_text}"
- 4  │  7.5  │ pattern_interrupt    │ "{hook_text}"
- 5  │  7.0  │ pov_as_advice        │ "{hook_text}"
- 6  │  6.5  │ vulnerable_confession│ "{hook_text}"
-
-Title suggestion: "{title based on top hook}"
+ #  │ Score │ Pattern              │ Hook                              │ Source
+────┼───────┼──────────────────────┼───────────────────────────────────┼─────────────────────────
+ 1  │  8.5  │ contradiction        │ "{hook_text}"                     │ Brain: contradiction @ 0.79
+ 2  │  8.2  │ specificity          │ "{hook_text}"                     │ Brain: specificity @ 0.42
+ 3  │  7.8  │ vulnerable_confession│ "{hook_text}"                     │ Brain: vuln_confession @ 0.49
+ 4  │  7.5  │ pattern_interrupt    │ "{hook_text}"                     │ Brain: pattern_interrupt @ 0.65
+ 5  │  7.0  │ pov_as_advice        │ "{hook_text}"                     │ Brain: no data — contrast fit
 
 ───────────────────────────────────────────────────
-⚡ YOUTUBE SHORTS
+Swipe-Inspired (structure borrowed from proven competitor hooks)
 ───────────────────────────────────────────────────
 
- #  │ Score │ Pattern              │ Hook
-────┼───────┼──────────────────────┼──────────────────────────────────
+ #  │ Score │ Pattern              │ Hook                              │ Source
+────┼───────┼──────────────────────┼───────────────────────────────────┼─────────────────────────
+ 6  │  8.3  │ specificity          │ "{hook_text}"                     │ Chase Hannegan — "I spent $50k..."
+ 7  │  7.9  │ contradiction        │ "{hook_text}"                     │ Cooper Simson — "Everyone told..."
+ 8  │  7.6  │ pov_as_advice        │ "{hook_text}"                     │ YOUR PROVEN — "If you're using..." [8.2% eng]
+ 9  │  7.2  │ timeframe_tension    │ "{hook_text}"                     │ Noe Varner — "In 30 days I..."
+10  │  6.8  │ vulnerable_confession│ "{hook_text}"                     │ James Goldbach — "I was wrong..."
+
+═══════════════════════════════════════════════════
+HOOK RECOMMENDATION
+═══════════════════════════════════════════════════
+
+I'd lead with Hook #{N}: "{hook_text}"
+
+Why:
+• {reason 1 — brain data, e.g., "contradiction has your highest brain weight (0.79)"}
+• {reason 2 — contrast fit, e.g., "scores 9.2 on contrast fit — the curiosity gap is strong"}
+• {reason 3 — optional: visual direction, proven pattern, or competitor differentiation}
+
+Trade-off: Hook #{M} ({pattern}) scores {X} and would differentiate
+from {competitor}'s similar hook, but your brain data favors #{N}.
+
+═══════════════════════════════════════════════════
+Which hook do you want to lead with? [Enter number 1-10]
+Or type 'regen' for fresh hooks, 'combine' to merge elements
+═══════════════════════════════════════════════════
+```
+
+**For shortform hooks**, add visual cue under each hook:
+```
  1  │  8.7  │ pattern_interrupt    │ "{hook_text}"
-    │       │                      │ 👁 Visual: {visual_cue}
- 2  │  8.3  │ timeframe_tension    │ "{hook_text}"
-    │       │                      │ 👁 Visual: {visual_cue}
-...
-
-{Repeat for each posting platform}
-
-═══════════════════════════════════════════════════
-Keep all hooks? [Y/n] or type numbers to drop (e.g., "drop 3, 5")
-═══════════════════════════════════════════════════
+    │       │                      │ Visual: {visual_cue}
 ```
 
-- Default (Enter or "y"): keep all as "draft"
-- "drop N, N": remove those hooks before saving
-- User can also type feedback to regenerate specific hooks
-
----
-
-## Phase D.5: Swipe-Influenced Hook Generation (Conditional)
-
-**This phase runs automatically after Phase D — no flag required.** It is skipped silently if no relevant swipe hooks exist.
-
-### Step 1: Check for Relevant Swipe Hooks
-
-Scan all files in `data/recon/swipe/` for swipe hook entries relevant to the current angle. Also scan `data/hooks/hook-repo.jsonl` for proven self-hooks (entries where `competitor` is `"charlieautomates (self)"`) — these are Charles's own top-performing hooks with real engagement data and should be weighted as high-confidence structural references.
-
-**Relevance matching logic:**
-
-1. Extract keywords from the current angle:
-   - `angle.title` — split into meaningful words (skip stop words: the, a, to, for, in, on, of, with, how, I, you, your)
-   - `angle.contrast.common_belief` — extract nouns/verbs
-   - `angle.contrast.surprising_truth` — extract nouns/verbs
-
-2. Compare against each swipe entry's `topic_keywords` array
-
-3. A swipe entry is "relevant" if it shares at least 1 keyword match OR if the general topic domain overlaps (AI, automation, agency, clients, revenue — broad category match)
-
-4. Collect all matching entries into a `relevant_swipes[]` list
-
-**If `relevant_swipes` is empty:** Skip this phase entirely. Do not mention swipe to the user. Proceed directly to Phase E.
-
-**If `relevant_swipes` has entries:** Continue to Step 2.
-
-### Step 2: Generate Swipe-Influenced Hooks
-
-For each relevant swipe entry (max 3 to avoid output bloat), generate ONE swipe-influenced hook per platform in `platforms.posting[]`.
-
-**Generation rules — CRITICAL:**
-
-- The swipe hook is **structural inspiration only** — take the energy, rhythm, and pattern type, NOT the content
-- NEVER copy or closely paraphrase the competitor's hook text
-- The generated hook must express CHARLES'S angle and contrast, in his voice/tone from `identity.tone`
-- Tag each generated hook with which swipe entry inspired it
-- **Self-hooks** (from hook-repo.jsonl with `competitor: "charlieautomates (self)"`) are Charles's own proven winners — reuse the exact structural formula (e.g., "If you're using X without Y, you're [consequence]") but with NEW topic content from the current angle. These have real engagement data backing them — prioritize their patterns when scores are close.
-
-**Generation approach per swipe entry:**
-
+**For longform hooks**, add title suggestion after the brain-influenced section:
 ```
-Swipe entry pattern: {e.g., "specificity"}
-Swipe entry energy: {derived from hook_text — e.g., "dollar-specific, outcome-first, no fluff"}
-Swipe why_it_works: {e.g., "anchors with a specific dollar amount which creates credibility"}
-
-Generate a hook using the same pattern and structural energy, but expressing the angle:
-  Common belief: {angle.contrast.common_belief}
-  Surprising truth: {angle.contrast.surprising_truth}
-  Proof method: {angle.proof_method}
-  Creator tone: {identity.tone}
+Title suggestion: "{title based on top hook}"
 ```
 
-**Apply the same scoring system from Phase B:**
-- contrast_fit, pattern_strength, platform_fit, composite
-- Apply hook_preferences boost from agent brain
-- Swipe-influenced hooks compete on the same scoring rubric — no artificial inflation
+**Display rules — every hook gets a Source column:**
+- **Brain hooks**: `Brain: {pattern} @ {weight}` — shows which brain weight drove this pattern choice. If pattern has no brain data (weight = 0), show `Brain: no data — contrast fit` to indicate it was chosen purely on angle fit
+- **Swipe hooks from competitors**: `{Name} — '{first 6-8 words}...'` — never the full hook
+- **Swipe hooks from self**: `YOUR PROVEN — '{first 6-8 words}...' [{engagement_rate}% eng]`
+- If all swipe hooks score below 6.0, note: "Swipe hooks scored lower — use with caution"
+- Hooks are numbered 1-10 continuously across both sections
 
-### Step 3: Display Swipe-Influenced Hooks
+**Recommendation rules:**
+- MUST include at least 2 reasons (contrast fit + one other: brain data, proven pattern, or visual direction)
+- Self-proven hooks outrank competitor swipe in recommendation weight
+- If no brain data or swipe data exists, recommend based on contrast fit + pattern strength alone
 
-Display as a SEPARATE labeled section, appended BELOW the Phase D output:
+### Step 5: Process User Selection
 
-```
-═══════════════════════════════════════════════════
-HOOKS (Swipe-Influenced)
-Inspired by proven hooks in your swipe file
-═══════════════════════════════════════════════════
+- **Number entered (1-10):** Use that hook as the lead. Record as `CHOSEN_HOOK_ID`.
+- **"combine" entered:** Ask which hooks to combine, generate hybrid, score it, record as `CHOSEN_HOOK_ID`.
+- **"regen" entered:** Generate 10 fresh hooks with different pattern selections.
+- **Feedback text:** Revise the recommended hook based on feedback, re-display, ask again.
+- **Enter (no input):** Use the recommended hook.
 
-───────────────────────────────────────────────────
-📺 YOUTUBE LONGFORM — Swipe-Influenced
-───────────────────────────────────────────────────
+**After selection, proceed to Phase E with the chosen hook marked as the lead.**
 
- #  │ Score │ Pattern              │ Hook                                          │ Inspired By
-────┼───────┼──────────────────────┼───────────────────────────────────────────────┼──────────────────────────────────
- 1  │  8.3  │ specificity          │ "{hook text}"                                 │ Chase Hannegan — "I spent $50k on..."
- 2  │  7.9  │ contradiction        │ "{hook text}"                                 │ Cooper Simson — "Everyone told me..."
-
-{Repeat per platform}
-
-═══════════════════════════════════════════════════
-Keep swipe-influenced hooks? [Y/n] or type numbers to drop
-(These save alongside your original hooks with source: "swipe")
-═══════════════════════════════════════════════════
-```
-
-**Display rules:**
-- "Inspired By" column shows ONLY: `{Competitor Name} — '{first 6-8 words}'...` — never the full competitor hook
-- For self-hooks (competitor = "charlieautomates (self)"), display as: `YOUR PROVEN — '{first 6-8 words}...' [{engagement_rate}% eng]` — the engagement rate signals real data backing
-- Swipe-influenced hooks display with the SAME scoring columns as originals
-- The user can drop swipe hooks independently from original hooks
-
-**Wait for user input** before proceeding to Phase E.
-
-**Rules:**
-- Maximum 3 swipe entries queried per run
-- Maximum 1 swipe-influenced hook per swipe entry per platform
-- Swipe-influenced hooks use identical scoring to original hooks — same weights, same composite formula
-- If all swipe hooks score below 6.0 composite, display them anyway but note: "These scored lower than your standard hooks — use with caution"
-- Never show the full competitor hook text in the display — only the truncated "Inspired by" tag
+### Rules:
+1. Brain context is ALWAYS shown FIRST (Step 1) before any hooks are generated
+2. Exactly 10 hooks total — never more, never less (5 brain + 5 swipe, or 10 brain if no swipe data)
+3. ALL hooks are for the SELECTED FORMAT ONLY — never mix formats
+4. Format labels: "Longform" / "Shortform" / "LinkedIn" — never "YouTube Longform" or "Instagram Reels"
+5. LinkedIn hooks: plain text only, NO em dashes, NO double dashes, NO emojis
+6. Never auto-skip the recommendation — even with empty brain data, recommend the top scorer
+7. If user picked "4" (just hooks) in Phase A, this phase still runs — helps them pick which hook to use when filming
+8. The user picks ONE hook — no "keep all" or "drop" prompts
 
 ---
 
@@ -508,6 +472,18 @@ Generating shortform script...
 ```
 Then continue to Phase I.
 
+**If mode is `linkedin`:**
+```
+═══════════════════════════════════════════════════
+✓ Saved {N} hooks to data/hooks.jsonl
+
+Angle "{angle_title}" status → scripted
+
+Generating LinkedIn post...
+═══════════════════════════════════════════════════
+```
+Then continue to Phase I with LinkedIn-specific generation (text post format, no visual cues, professional tone).
+
 ---
 
 ## Phase F: Longform Script Generation (--longform only)
@@ -516,8 +492,8 @@ Then continue to Phase I.
 
 ### Step 1: Select Opening Hook
 
-From the youtube_longform hooks generated in Phase D, select the **top-scoring** hook as the opening:
-- Use the #1 ranked youtube_longform hook from Phase D
+Use the hook selected by the user in Phase B Step 5 (`CHOSEN_HOOK_ID`) as the opening:
+- Use the hook the user chose in Phase B Step 5 (not the top scorer — the user's explicit pick)
 - Record its hook_id for the script object
 - Extract the hook_text as the spoken opening line
 - Note the pattern used for visual direction:
@@ -527,6 +503,7 @@ From the youtube_longform hooks generated in Phase D, select the **top-scoring**
   - pov_as_advice → talking head, authoritative posture
   - vulnerable_confession → talking head, intimate/close framing
   - pattern_interrupt → mid-action or unexpected visual
+- **Visual patterns advisory (conditional):** If `visual_patterns.top_visual_types` has data, prefer the top-performing visual type when suggesting the opening shot type (e.g., "Brain data suggests split_screen performs best, avg 12.5% engagement, 3 samples — consider using split screen for the opening"). If `visual_patterns.pacing_performance` has data, reference it in energy notes (e.g., "Brain data suggests fast pacing averages 10.8% engagement vs 6.2% for moderate"). These are advisory suggestions, not overrides — the pattern-based defaults above still apply as the primary guidance. If visual_patterns is empty, skip this entirely.
 
 ### Step 1b: Generate 3 P's Intro Framework (Longform Only)
 
@@ -750,6 +727,7 @@ Generate one filming card per scene from the script structure. Map script sectio
   - Proof/demo: "Calm, methodical, let the screen do the talking"
   - CTA: "Warm, genuine, not salesy"
   - Outro: "Relaxed, friendly, looking forward"
+- **Visual patterns advisory (conditional):** If `visual_patterns.top_visual_types` has data, prefer the top-performing visual type when suggesting `shot_type` for ambiguous scenes (e.g., if split_screen ranks highest and the section involves a comparison, default to split_screen). If `visual_patterns.pacing_performance` has data, include a pacing note in `notes` for applicable scenes (e.g., "Brain data: fast pacing averages 10.8% engagement — consider quick cuts here"). If visual_patterns is empty, skip entirely — filming cards generate identically to before.
 
 **Display filming cards:**
 
@@ -881,9 +859,25 @@ Ready to film! Print your filming cards or review with:
 ═══════════════════════════════════════════════════════════════
 ```
 
+### PDF Lead Magnet Offer
+
+**If `--pdf` flag was passed:** Skip this prompt — PDF will auto-generate via Phase K after the LinkedIn offer.
+
+**Otherwise**, after displaying the persistence confirmation, offer a PDF:
+
+```
+═══════════════════════════════════════
+Want a PDF lead magnet for this? [y/N]
+═══════════════════════════════════════
+```
+
+- Default is **No** (just pressing Enter skips it)
+- If yes: run `python3 scripts/generate-pdf.py --script-id {script_id}` and display the output path (`data/pdfs/{script_id}.pdf`)
+- If no: continue to LinkedIn offer
+
 ### LinkedIn Post Offer
 
-After displaying the persistence confirmation, offer a LinkedIn post:
+After the PDF offer (whether accepted or declined), offer a LinkedIn post:
 
 ```
 ═══════════════════════════════════════
@@ -906,6 +900,15 @@ Want a LinkedIn post for this piece? [y/N]
      - Save to `data/scripts.jsonl` with `platform: "linkedin"`, generating a new script ID
      - Save as .md file: `LI - {slug}.md` in `/Users/user/Desktop/Development-Charlie-2/Charlieautomates/content/scripts/not-done/linkedin-post/`
      - Display: `✓ LinkedIn post saved: content/scripts/not-done/linkedin-post/LI - {slug}.md`
+     - Then offer a PDF for the LinkedIn post:
+       ```
+       ═══════════════════════════════════════
+       Want a PDF lead magnet for this? [y/N]
+       ═══════════════════════════════════════
+       ```
+       - If `--pdf` flag was passed: skip this prompt (Phase K handles it)
+       - Default is **No**
+       - If yes: run `python3 scripts/generate-pdf.py --script-id {linkedin_script_id}` and display the output path
 
 **If --pdf was used:** After the LinkedIn offer (whether accepted or declined), add:
 ```
@@ -921,8 +924,8 @@ Then continue to Phase K.
 
 ### Step 1: Select Opening Hook
 
-From the shortform hooks generated in Phase D, select the **top-scoring** hook across youtube_shorts, instagram_reels, and tiktok as the opening:
-- Use the #1 ranked shortform hook
+Use the hook selected by the user in Phase B Step 5 (`CHOSEN_HOOK_ID`) as the opening:
+- Use the hook the user chose in Phase B Step 5 (not the top scorer — the user's explicit pick)
 - Record its hook_id for the script object
 
 ### Step 2: Generate ONE Cross-Platform Beat-Based Script
@@ -933,7 +936,7 @@ Use the **HEIL framework** (Hook / Explain / Illustrate / Lesson) as the concept
 
 | Beat | Time | HEIL Label | Purpose | Requirements |
 |------|------|------------|---------|-------------|
-| 1 | 0-3s | **H: HOOK** | Top-scoring shortform hook from Phase D. visual_cue required. | Grab attention — pattern interrupt, bold claim, or surprising visual. |
+| 1 | 0-3s | **H: HOOK** | User-chosen hook from Phase B Step 5 (`CHOSEN_HOOK_ID`). visual_cue required. | Grab attention — pattern interrupt, bold claim, or surprising visual. |
 | 2 | 3-8s | **E: EXPLAIN** | One sentence setting up the problem/contrast. No jargon — assume the viewer has NEVER heard of this topic before. | Visual: relevant B-roll or text overlay. |
 | 3-5 | 8-25s | **I: ILLUSTRATE** | 2-3 beats delivering the core value with proof. Use an analogy from the VIEWER'S world, not the creator's. Each beat: action, visual, text_overlay. | Make it tangible — "It's like having a full-time employee who never sleeps" not "It uses agentic AI workflows." |
 | 6 | 25-30s | **L: LESSON** | Specific actionable takeaway the viewer can use TODAY. Not vague inspiration — one concrete step. | "Open Claude Code and type /viral:discover — that's it, you're running competitor research." |
@@ -1104,9 +1107,25 @@ Next steps:
 ═══════════════════════════════════════════════════
 ```
 
+### PDF Lead Magnet Offer
+
+**If `--pdf` flag was passed:** Skip this prompt — PDF will auto-generate via Phase K after the LinkedIn offer.
+
+**Otherwise**, after displaying the persistence confirmation, offer a PDF:
+
+```
+═══════════════════════════════════════
+Want a PDF lead magnet for this? [y/N]
+═══════════════════════════════════════
+```
+
+- Default is **No** (just pressing Enter skips it)
+- If yes: run `python3 scripts/generate-pdf.py --script-id {script_id}` and display the output path (`data/pdfs/{script_id}.pdf`)
+- If no: continue to LinkedIn offer
+
 ### LinkedIn Post Offer
 
-After displaying the persistence confirmation, offer a LinkedIn post:
+After the PDF offer (whether accepted or declined), offer a LinkedIn post:
 
 ```
 ═══════════════════════════════════════
@@ -1129,6 +1148,15 @@ Want a LinkedIn post for this piece? [y/N]
      - Save to `data/scripts.jsonl` with `platform: "linkedin"`, generating a new script ID
      - Save as .md file: `LI - {slug}.md` in `/Users/user/Desktop/Development-Charlie-2/Charlieautomates/content/scripts/not-done/linkedin-post/`
      - Display: `✓ LinkedIn post saved: content/scripts/not-done/linkedin-post/LI - {slug}.md`
+     - Then offer a PDF for the LinkedIn post:
+       ```
+       ═══════════════════════════════════════
+       Want a PDF lead magnet for this? [y/N]
+       ═══════════════════════════════════════
+       ```
+       - If `--pdf` flag was passed: skip this prompt (Phase K handles it)
+       - Default is **No**
+       - If yes: run `python3 scripts/generate-pdf.py --script-id {linkedin_script_id}` and display the output path
 
 **If --pdf was used:** After the LinkedIn offer (whether accepted or declined), add:
 ```

@@ -37,7 +37,7 @@ git clone https://github.com/charlesdove977/goviralbitch.git && cd goviralbitch 
 ## The Pipeline
 
 ```
- DISCOVER ──> ANGLE ──> SCRIPT ──> PUBLISH ──> ANALYZE
+ DISCOVER ──> ANGLE ──> SCRIPT ──> POST ──> ANALYZE
     ^                                             |
     |                                             |
     └─── feedback loop (brain evolves) ───────────┘
@@ -48,7 +48,7 @@ git clone https://github.com/charlesdove977/goviralbitch.git && cd goviralbitch 
 | **Discover** | Pull your competitors' winning content — see what got the most engagement, transcribe their videos, extract hook skeletons, and repurpose them in your voice. Currently supports YouTube + Instagram. More platforms coming. |
 | **Angle** | Apply Contrast Formula to turn raw topics into format-specific angles (longform, shortform, LinkedIn) |
 | **Script** | Generate hooks (6 patterns), full scripts (longform/shortform), filming cards, PDF lead magnets |
-| **Publish** | Schedule content via calendar, track ideas through pipeline stages |
+| **Post** | Post on your platforms after you've created your content |
 | **Analyze** | Pull analytics, extract winners, identify patterns, auto-update brain and hook repository |
 
 ---
@@ -63,8 +63,6 @@ git clone https://github.com/charlesdove977/goviralbitch.git && cd goviralbitch 
 | `/viral:angle` | Contrast Formula angle development — 5 angles per format (longform/shortform/LinkedIn) |
 | `/viral:script` | Interactive script generator — pick format → pick angle → hooks + full script + PDF option |
 | `/viral:analyze` | Multi-platform analytics + winner extraction + feedback loop |
-| `/viral:ideas` 🚧 | Idea board CRUD + pipeline funnel + content repurposing |
-| `/viral:status` 🚧 | Pipeline dashboard — funnel, calendar, brain health |
 | `/viral:update-brain` | Brain evolution protocol + insight aggregation |
 
 ---
@@ -77,8 +75,6 @@ git clone https://github.com/charlesdove977/goviralbitch.git && cd goviralbitch 
 - **Format-based angles** — 5 angles per format (longform, shortform, LinkedIn) = 15 takes per topic
 - **PDF lead magnet generation** from any script
 - **Discovery**: YouTube + Instagram live now — TikTok, LinkedIn, Reddit, X, Hacker News + more coming
-- 🚧 **Idea board** with pipeline funnel and content repurposing
-- 🚧 **Content calendar** with configurable cadence engine
 - **Monetization coaching** baked into every output
 
 ---
@@ -87,7 +83,7 @@ git clone https://github.com/charlesdove977/goviralbitch.git && cd goviralbitch 
 
 ```
 goviralbitch/
-├── .claude/commands/       # 9 pipeline commands (viral-*.md)
+├── .claude/commands/       # 7 pipeline commands (viral-*.md)
 ├── data/                   # JSONL data stores + agent brain
 │   ├── agent-brain.json    # Evolving system memory
 │   ├── topics/             # Discovered topics
@@ -96,8 +92,6 @@ goviralbitch/
 │   ├── scripts.jsonl       # Generated scripts
 │   ├── analytics/          # Performance data
 │   ├── insights/           # Aggregated patterns
-│   ├── idea-board.jsonl    # Pipeline tracker
-│   ├── calendar.jsonl      # Content calendar
 │   └── cta-templates.json  # CTA template library
 ├── schemas/                # JSON Schema draft-07 contracts
 ├── scripts/                # Bash + Python utilities (incl. generate-pdf.py)

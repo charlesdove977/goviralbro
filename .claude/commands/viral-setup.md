@@ -9,7 +9,7 @@ $ARGUMENTS
 Parse for:
 - `--check` — Only run dependency check (Phase A), skip API setup
 - `--reconfig` — Reconfigure already-connected platforms
-- `--analytics` — Skip Phases A-D, go straight to Phase E (analytics connections only)
+- `--analytics` — Skip Phases A-D, go straight to Phase E (analytics connections only — runs E.1 + E.2 + E.3)
 - `--analytics --youtube` — Phase E.1 only (YouTube Analytics OAuth)
 - `--analytics --instagram` — Phase E.2 only (Instagram Graph API token)
 - No flags — full setup flow (Phases A-E)
@@ -662,6 +662,44 @@ Display:
 
 ---
 
+### Phase E.3: YouTube Cookie Access (Recommended)
+
+**Always runs unless `--analytics --youtube` or `--analytics --instagram` only.**
+
+Display:
+```
+────────────────────────────────────────
+E.3 — YouTube Cookie Access (Recommended)
+════════════════════════════════════════
+
+Some newer YouTube videos use bot detection that blocks
+standard downloads. To bypass this, we pass your Chrome
+browser cookies to yt-dlp.
+
+Requirements:
+- Chrome installed and logged into YouTube
+- That's it — no API key needed
+
+This enables /viral:analyze deep analysis and
+/viral:discover competitor transcription to work on
+ALL YouTube videos, not just older ones.
+```
+
+**Verification step:**
+
+Run the following test command:
+
+```bash
+yt-dlp --cookies-from-browser chrome --print title "https://www.youtube.com/watch?v=dQw4w9WgXcQ" 2>/dev/null && echo "PASS" || echo "FAIL"
+```
+
+- If PASS: display `"✓ Chrome cookies working — YouTube downloads will use your browser session"`
+- If FAIL: display `"⚠ Cookie access failed. Make sure Chrome is installed and you're logged into YouTube. Downloads will still work for most videos, but some newer ones may fail."`
+
+This step is informational + verification only — no configuration needed. It's optional (can be skipped like all Phase E steps).
+
+---
+
 ### Phase E Summary
 
 Display after completing whichever sub-phases ran:
@@ -672,6 +710,8 @@ ANALYTICS CONNECTIONS
 ════════════════════════════════════════
 
 {list each connection with ✓ connected, ✗ failed, or ○ skipped}
+
+YouTube Cookies    [✓ working / ⚠ not available / ○ skipped]
 
 ────────────────────────────────────────
 /viral:analyze will now auto-pull analytics for connected platforms.

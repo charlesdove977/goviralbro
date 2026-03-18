@@ -77,6 +77,23 @@ For each competitor where `platform == "Instagram"`:
    # Create temp directory for scrape
    mkdir -p /tmp/viral-discover-ig
 
+   # PRE-FLIGHT: instaloader freshness check (run ONCE per session)
+   # Instagram changes its API frequently — stale instaloader = 403/login errors
+   if [ -z "$INSTALOADER_CHECKED" ]; then
+     INSTA_AGE_DAYS=$(python3 -c "
+import importlib.metadata, datetime, re
+v = importlib.metadata.version('instaloader')
+parts = [int(x) for x in re.findall(r'\d+', v)[:3]]
+d = datetime.datetime(parts[0] + (2000 if parts[0] < 100 else 0), parts[1], parts[2])
+print((datetime.datetime.now() - d).days)
+" 2>/dev/null || echo "999")
+     if [ "$INSTA_AGE_DAYS" -gt 60 ]; then
+       echo "⚠ instaloader is ${INSTA_AGE_DAYS} days old — updating to avoid Instagram 403 blocks..."
+       pip3 install -U instaloader 2>&1 | tail -2
+     fi
+     INSTALOADER_CHECKED=1
+   fi
+
    # Pull posts from last 30 days (metadata only — no media download)
    # IMPORTANT: Use python3 -m instaloader (not bare instaloader) for PATH compatibility
    python3 -m instaloader --no-pictures --no-videos --no-video-thumbnails --post-metadata-txt="" --dirname-pattern="/tmp/viral-discover-ig/{profile}" -- ${HANDLE}
@@ -139,19 +156,62 @@ Enter numbers (e.g., "1,3,5") or "skip" to continue without transcription:
 
 **YouTube transcription + visual analysis:**
 ```bash
-# 1. Download audio for transcription
-yt-dlp -x --audio-format mp3 -o "/tmp/viral-discover-yt/%(id)s.%(ext)s" "https://youtube.com/watch?v=${VIDEO_ID}"
+# Chrome cookies bypass SABR detection — fallback retries without cookies if Chrome unavailable
+# IMPORTANT: Track all failures — never silently skip a failed step
+
+# PRE-FLIGHT: yt-dlp freshness check (run ONCE before first download in batch)
+# YouTube changes bot detection frequently — stale yt-dlp = 403 errors, hung downloads
+# Only runs once per session (guard with YT_DLP_CHECKED variable)
+if [ -z "$YT_DLP_CHECKED" ]; then
+  YTDLP_AGE_DAYS=$(python3 -c "
+import subprocess, datetime
+v = subprocess.check_output(['yt-dlp', '--version']).decode().strip()
+d = datetime.datetime.strptime(v, '%Y.%m.%d')
+print((datetime.datetime.now() - d).days)
+" 2>/dev/null || echo "999")
+  if [ "$YTDLP_AGE_DAYS" -gt 30 ]; then
+    echo "⚠ yt-dlp is ${YTDLP_AGE_DAYS} days old — updating to avoid YouTube 403 blocks..."
+    pip3 install -U yt-dlp 2>&1 | tail -2
+  fi
+  YT_DLP_CHECKED=1
+fi
+
+# 1. Download audio for transcription (primary: with cookies, fallback: without)
+yt-dlp --cookies-from-browser chrome -x --audio-format mp3 -o "/tmp/viral-discover-yt/%(id)s.%(ext)s" "https://youtube.com/watch?v=${VIDEO_ID}" 2>/tmp/viral-discover-yt/${VIDEO_ID}_audio_err.txt
+if [ $? -ne 0 ]; then
+  yt-dlp -x --audio-format mp3 -o "/tmp/viral-discover-yt/%(id)s.%(ext)s" "https://youtube.com/watch?v=${VIDEO_ID}" 2>>/tmp/viral-discover-yt/${VIDEO_ID}_audio_err.txt
+  if [ $? -ne 0 ]; then
+    echo "⚠ [${VIDEO_TITLE}]: audio download failed — $(tail -1 /tmp/viral-discover-yt/${VIDEO_ID}_audio_err.txt)"
+    # Add to FAILURES list: {title, step: "audio download", error: last line of err, retryable: true if 429/timeout}
+  fi
+fi
 
 # 2. Download first 60 seconds of video for visual hook analysis (480p max to keep size small)
-yt-dlp --download-sections "*0-60" -f "best[height<=480][ext=mp4]/best[height<=480]/best" \
-  -o "/tmp/viral-discover-yt/%(id)s_visual.%(ext)s" "https://youtube.com/watch?v=${VIDEO_ID}"
+# Primary: with cookies, fallback: without
+yt-dlp --cookies-from-browser chrome --download-sections "*0-60" -f "best[height<=480][ext=mp4]/best[height<=480]/best" \
+  -o "/tmp/viral-discover-yt/%(id)s_visual.%(ext)s" "https://youtube.com/watch?v=${VIDEO_ID}" 2>/tmp/viral-discover-yt/${VIDEO_ID}_video_err.txt
+if [ $? -ne 0 ]; then
+  yt-dlp --download-sections "*0-60" -f "best[height<=480][ext=mp4]/best[height<=480]/best" \
+    -o "/tmp/viral-discover-yt/%(id)s_visual.%(ext)s" "https://youtube.com/watch?v=${VIDEO_ID}" 2>>/tmp/viral-discover-yt/${VIDEO_ID}_video_err.txt
+  if [ $? -ne 0 ]; then
+    echo "⚠ [${VIDEO_TITLE}]: video download failed — $(tail -1 /tmp/viral-discover-yt/${VIDEO_ID}_video_err.txt)"
+    # Add to FAILURES list: {title, step: "video download", error: last line of err, retryable: true if 429/timeout}
+  fi
+fi
 
 # 3. Extract frames from hook section (0-20 seconds for longform, 1 frame/sec = 20 frames)
 mkdir -p "/tmp/viral-discover-yt/${VIDEO_ID}_frames"
 ffmpeg -i "/tmp/viral-discover-yt/${VIDEO_ID}_visual.mp4" -t 20 -vf "fps=1" \
-  "/tmp/viral-discover-yt/${VIDEO_ID}_frames/frame_%02d.jpg" -y 2>/dev/null || \
-ffmpeg -i "/tmp/viral-discover-yt/${VIDEO_ID}_visual.webm" -t 20 -vf "fps=1" \
-  "/tmp/viral-discover-yt/${VIDEO_ID}_frames/frame_%02d.jpg" -y 2>/dev/null
+  "/tmp/viral-discover-yt/${VIDEO_ID}_frames/frame_%02d.jpg" -y 2>/tmp/viral-discover-yt/${VIDEO_ID}_ffmpeg_err.txt
+if [ $? -ne 0 ]; then
+  ffmpeg -i "/tmp/viral-discover-yt/${VIDEO_ID}_visual.webm" -t 20 -vf "fps=1" \
+    "/tmp/viral-discover-yt/${VIDEO_ID}_frames/frame_%02d.jpg" -y 2>/tmp/viral-discover-yt/${VIDEO_ID}_ffmpeg_err.txt
+  if [ $? -ne 0 ]; then
+    echo "⚠ [${VIDEO_TITLE}]: frame extraction failed — $(tail -1 /tmp/viral-discover-yt/${VIDEO_ID}_ffmpeg_err.txt)"
+    # Add to FAILURES list: {title, step: "frame extraction", error: last line of err, retryable: true if corrupt download}
+    # Proceed with transcript-only analysis (graceful degradation — no visual)
+  fi
+fi
 
 # 4. Transcribe with OpenAI Whisper API (preferred — faster, more reliable)
 curl -s https://api.openai.com/v1/audio/transcriptions \
@@ -168,17 +228,33 @@ whisper "/tmp/viral-discover-yt/${VIDEO_ID}.mp3" --model base --output_format tx
 
 **Instagram transcription + visual analysis:**
 ```bash
+# IMPORTANT: Track all failures — never silently skip a failed step
+
 # 1. Download reel video (used for BOTH audio + visual — no need to download twice)
-python3 -m instaloader --dirname-pattern="/tmp/viral-discover-ig/{profile}" -- -${SHORTCODE}
+python3 -m instaloader --dirname-pattern="/tmp/viral-discover-ig/{profile}" -- -${SHORTCODE} 2>/tmp/viral-discover-ig/${SHORTCODE}_dl_err.txt
+if [ $? -ne 0 ]; then
+  echo "⚠ [${VIDEO_TITLE}]: Instagram download failed — $(tail -1 /tmp/viral-discover-ig/${SHORTCODE}_dl_err.txt)"
+  # Add to FAILURES list: {title, step: "Instagram download", error: last line of err, retryable: true if 403 rate limit}
+  # Skip steps 2-3 for this video — no file to extract from
+fi
 
 # 2. Extract audio for transcription
 ffmpeg -i "/tmp/viral-discover-ig/${HANDLE}/${POST_FILE}" -vn -acodec libmp3lame \
-  "/tmp/viral-discover-ig/${HANDLE}/${SHORTCODE}.mp3"
+  "/tmp/viral-discover-ig/${HANDLE}/${SHORTCODE}.mp3" 2>/tmp/viral-discover-ig/${SHORTCODE}_audio_err.txt
+if [ $? -ne 0 ]; then
+  echo "⚠ [${VIDEO_TITLE}]: audio extraction failed — $(tail -1 /tmp/viral-discover-ig/${SHORTCODE}_audio_err.txt)"
+  # Add to FAILURES list: {title, step: "audio extraction", error: last line of err, retryable: false if source file missing}
+fi
 
 # 3. Extract frames from hook section (0-15 seconds, 1 frame/sec)
 mkdir -p "/tmp/viral-discover-ig/${HANDLE}/${SHORTCODE}_frames"
 ffmpeg -i "/tmp/viral-discover-ig/${HANDLE}/${POST_FILE}" -t 15 -vf "fps=1" \
-  "/tmp/viral-discover-ig/${HANDLE}/${SHORTCODE}_frames/frame_%02d.jpg" -y 2>/dev/null
+  "/tmp/viral-discover-ig/${HANDLE}/${SHORTCODE}_frames/frame_%02d.jpg" -y 2>/tmp/viral-discover-ig/${SHORTCODE}_ffmpeg_err.txt
+if [ $? -ne 0 ]; then
+  echo "⚠ [${VIDEO_TITLE}]: frame extraction failed — $(tail -1 /tmp/viral-discover-ig/${SHORTCODE}_ffmpeg_err.txt)"
+  # Add to FAILURES list: {title, step: "frame extraction", error: last line of err, retryable: true if corrupt download}
+  # Proceed with transcript-only analysis (graceful degradation — no visual)
+fi
 
 # 4. Then use OpenAI Whisper API or local whisper (same as YouTube above)
 ```
@@ -225,6 +301,31 @@ VISUAL ANALYSIS INSTRUCTIONS (run after frames are extracted):
 
    Continue without blocking the rest of the flow.
 ```
+
+**After all selected videos are processed, if any failures occurred, display a failures table BEFORE the transcript dissection output:**
+
+```
+═══════════════════════════════════════════════════
+⚠ DOWNLOAD/EXTRACTION FAILURES ({N} of {M} videos)
+═══════════════════════════════════════════════════
+
+ #  │ Video                           │ Step Failed         │ Error                          │ Retryable
+────┼─────────────────────────────────┼─────────────────────┼────────────────────────────────┼──────────
+ 1  │ {title}                         │ {step}              │ {error msg, 1 line}            │ {YES/NO}
+────┼─────────────────────────────────┼─────────────────────┼────────────────────────────────┼──────────
+...
+
+{If ALL selected videos failed:}
+⚠ All downloads failed. Diagnostic tips:
+  1. Check Chrome is installed and you're logged into YouTube
+  2. Run: yt-dlp --version (must be 2024.01+)
+  3. Run: yt-dlp --cookies-from-browser chrome --print title "https://youtube.com/watch?v=dQw4w9WgXcQ"
+  4. If Chrome cookies fail, try updating yt-dlp: pip install -U yt-dlp
+
+═══════════════════════════════════════════════════
+```
+
+**Rule:** Videos that failed download are excluded from transcript dissection (Step 5) but still appear in the failures table. Videos where only frame extraction failed proceed to Step 5 with transcript-only analysis (visual section shows "visual: unavailable — frame extraction failed").
 
 ### Step 5: Dissect Transcripts + Visual Analysis
 
@@ -550,7 +651,7 @@ Trend queries run: {N} (or "skipped")
 Total topics scored: {N} → {N saved} (after dedup + threshold)
 Saved to: data/topics/{YYYY-MM-DD}-topics.jsonl
 
-FAILURES ({N} total — {N} retryable)
+FAILURES ({N} of {M} videos failed — {N} retryable)
 ───────────────────────────────────────────────────
 {If no failures: "None — all steps completed successfully."}
 
@@ -559,6 +660,12 @@ FAILURES ({N} total — {N} retryable)
    Step: {video download | frame extraction | transcription | frame read}
    Error: {actual error message, truncated to 1 line}
    Retryable: {YES — retry later / NO — {reason}}
+
+{If ALL selected videos failed:}
+⚠ All downloads failed. Check:
+  1. Chrome cookies: yt-dlp --cookies-from-browser chrome --print title "https://youtube.com/watch?v=dQw4w9WgXcQ"
+  2. yt-dlp version: yt-dlp --version (must be 2024.01+)
+  3. Update: pip install -U yt-dlp
 ───────────────────────────────────────────────────
 {If any retryable failures:}
 To retry failed items only, run /viral:discover again — cached

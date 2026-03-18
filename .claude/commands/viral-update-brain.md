@@ -123,7 +123,34 @@ Update the aggregated view of what's working:
 - **avg_retention_30s**: Calculate rolling average 30-second retention. Same recency weighting.
 - **total_content_analyzed**: Increment by the number of new pieces analyzed this cycle.
 
-### B4: Optimal Posting Times (optional)
+### B4: Visual Pattern Aggregation
+
+If visual data is available from recent deep analysis runs (visual_type, pattern_interrupt_type, text_overlay_color, pacing from `/viral:analyze` output or analytics entries), aggregate into the brain's `visual_patterns` section.
+
+**For each analyzed video with visual data:**
+
+1. **Extract**: visual_type, pattern_interrupt_type, text_overlay_color(s), pacing
+2. **Update running averages** for each dimension:
+   - `new_avg = ((old_avg * old_count) + new_value) / (old_count + 1)`
+   - Increment `sample_count` by 1
+3. **Determine trend** for `top_visual_types`: compare last 3 data points vs prior average
+   - Recent avg > prior avg x 1.1 → "rising"
+   - Recent avg < prior avg x 0.9 → "declining"
+   - Otherwise → "stable"
+4. **Re-sort** `top_visual_types` by `avg_engagement` descending after updates
+5. **Update** `text_overlay_colors` — each color key gets its own running average for avg_views and avg_engagement
+6. **Update** `pacing_performance` — each speed key (e.g., "fast", "moderate", "slow") gets running average for avg_engagement
+
+**Log changes to evolution log:**
+```
+Visual patterns updated:
+- text_overlay_colors.red: avg_views 45,000 → 48,200 (sample +1 → 4)
+- top_visual_types: split_screen now #1 by engagement (was #3)
+```
+
+**If no visual data available from recent analysis, skip this step silently.**
+
+### B5: Optimal Posting Times (optional)
 
 If analytics data includes timestamps and performance correlation:
 - Update `cadence.optimal_times` with best-performing posting windows per platform
@@ -163,6 +190,11 @@ Performance Patterns:
   Avg retention: {old} → {new}
   Total analyzed: {old} → {new}
 
+Visual Patterns (if data available):
+  top_visual_types: {ranked list with avg_engagement}
+  text_overlay_colors: {color → avg_views, avg_engagement changes}
+  pacing_performance: {speed → avg_engagement changes}
+
 {Optimal times changes if any}
 
 ════════════════════════════════════════
@@ -178,10 +210,11 @@ Ask: **"Apply these brain updates? (yes/no)"**
 ### Write Updates
 
 1. **Read the current brain** (fresh read, in case anything changed)
-2. **Update ONLY** the three system-managed sections + metadata:
+2. **Update ONLY** the system-managed sections + metadata:
    - `learning_weights` — new values
    - `hook_preferences` — new scores
    - `performance_patterns` — updated aggregates
+   - `visual_patterns` — updated visual data (if new data available)
    - `cadence.optimal_times` — if data supports it
    - `metadata.updated_at` — current ISO timestamp
    - `metadata.last_analysis` — current ISO timestamp
