@@ -81,11 +81,9 @@ echo ""
 echo "Step 2: Initializing data files..."
 
 DATA_FILES=(
-    "data/idea-board.jsonl"
     "data/hooks.jsonl"
     "data/scripts.jsonl"
     "data/angles.jsonl"
-    "data/calendar.jsonl"
     "data/analytics/analytics.jsonl"
 )
 
@@ -213,7 +211,83 @@ fi
 echo ""
 
 # ──────────────────────────────────────
-# Step 6: Summary
+# Step 6: Global command access
+# ──────────────────────────────────────
+echo "Step 6: Command accessibility..."
+echo ""
+echo "  The /viral:* commands live in this repo's .claude/commands/ folder."
+echo "  By default, they only work when Claude Code is opened from this directory."
+echo ""
+
+COMMANDS_SRC="$PIPELINE_DIR/.claude/commands"
+GLOBAL_DIR="$HOME/.claude/commands"
+CMD_STATUS="local only"
+
+# Check if --global or --skip-global was passed
+if [[ "${1:-}" == "--skip-global" ]] || [[ "${2:-}" == "--skip-global" ]]; then
+    echo "  Skipped (--skip-global flag)"
+    echo ""
+elif [[ "${1:-}" == "--global" ]] || [[ "${2:-}" == "--global" ]]; then
+    # Non-interactive: install to ~/.claude/commands/
+    mkdir -p "$GLOBAL_DIR"
+    LINKED=0
+    for cmd in "$COMMANDS_SRC"/viral-*.md; do
+        fname="$(basename "$cmd")"
+        target="$GLOBAL_DIR/$fname"
+        if [[ -L "$target" ]] && [[ "$(readlink "$target")" == "$cmd" ]]; then
+            continue
+        fi
+        ln -sf "$cmd" "$target"
+        ((LINKED++))
+    done
+    TOTAL=$(ls "$COMMANDS_SRC"/viral-*.md 2>/dev/null | wc -l | tr -d ' ')
+    echo "  ✓ Symlinked to $GLOBAL_DIR ($LINKED new, $((TOTAL - LINKED)) already linked)"
+    CMD_STATUS="global (symlinked)"
+    echo ""
+else
+    # Interactive mode
+    echo "  Where should /viral:* commands be accessible?"
+    echo ""
+    echo -e "    ${CYAN}[1]${RESET} Global — symlink to ~/.claude/commands/ (works everywhere)"
+    echo -e "    ${CYAN}[2]${RESET} Local only — keep in this repo (default)"
+    echo ""
+    echo -n "  Choice [1/2]: "
+
+    # Read with timeout for non-interactive environments
+    if read -r -t 30 CHOICE 2>/dev/null; then
+        case "${CHOICE:-2}" in
+            1)
+                mkdir -p "$GLOBAL_DIR"
+                LINKED=0
+                for cmd in "$COMMANDS_SRC"/viral-*.md; do
+                    fname="$(basename "$cmd")"
+                    target="$GLOBAL_DIR/$fname"
+                    if [[ -L "$target" ]] && [[ "$(readlink "$target")" == "$cmd" ]]; then
+                        continue
+                    fi
+                    ln -sf "$cmd" "$target"
+                    ((LINKED++))
+                done
+                TOTAL=$(ls "$COMMANDS_SRC"/viral-*.md 2>/dev/null | wc -l | tr -d ' ')
+                echo "  ✓ Symlinked to $GLOBAL_DIR ($LINKED new, $((TOTAL - LINKED)) already linked)"
+                CMD_STATUS="global (symlinked)"
+                echo ""
+                echo -e "  ${DIM}Symlinks point back to this repo — updates here propagate automatically.${RESET}"
+                echo -e "  ${DIM}To undo: rm ~/.claude/commands/viral-*.md${RESET}"
+                ;;
+            *)
+                echo "  ✓ Keeping commands local to this repo"
+                ;;
+        esac
+    else
+        echo ""
+        echo "  ✓ Keeping commands local (no input received)"
+    fi
+    echo ""
+fi
+
+# ──────────────────────────────────────
+# Step 7: Summary
 # ──────────────────────────────────────
 echo ""
 echo -e "  ${GREEN}✓${RESET} Installed Viral Command"
@@ -223,6 +297,7 @@ echo -e "  Data files:   OK"
 echo -e "  Dependencies: $DEPS_STATUS"
 echo -e "  CLI tools:    $CLI_STATUS"
 echo -e "  API keys:     $ENV_STATUS"
+echo -e "  Commands:     $CMD_STATUS"
 echo ""
 echo -e "${GREEN}Done!${RESET} Run ${CYAN}/viral:setup${RESET} to get started."
 echo ""
