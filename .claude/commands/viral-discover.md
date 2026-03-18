@@ -36,7 +36,9 @@ Stop and say: *"Your agent brain isn't set up yet. Run `/viral:onboard` first to
 
 ---
 
-## Phase A.5: Discovery Mode Selection
+## Phase A.5: Discovery Mode Selection — MANDATORY GATE
+
+**⚠️ CRITICAL: This phase MUST run BEFORE any competitor scraping or data fetching. Do NOT skip this phase. Do NOT start pulling YouTube or Instagram data until the user has selected a discovery mode. Display the keyword table and mode selector, then STOP and wait for input.**
 
 **Show the creator their current discovery keywords from the brain, then ask how they want to discover:**
 
@@ -84,7 +86,9 @@ Choice [C/K/B]:
 
 ## Phase 1: Competitor Analysis (Core)
 
-**Skip this phase if `DISCOVERY_MODE = keyword`.**
+**⚠️ PREREQUISITE: Phase A.5 must have completed first. The user must have selected a DISCOVERY_MODE. If you haven't shown the keyword table and mode selector yet, GO BACK to Phase A.5 now.**
+
+**Skip this phase entirely if `DISCOVERY_MODE = keyword`.**
 
 Pull and rank competitor **longform** content from the last 30 days.
 
