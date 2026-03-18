@@ -223,7 +223,6 @@ After setup, run through the pipeline once to verify everything works:
 2. `/viral:discover --quick` — Run a quick discovery scan
 3. `/viral:angle --pick` — Develop an angle from a discovered topic
 4. `/viral:script --pick --shortform` — Generate a shortform script
-5. `/viral:status` — View your pipeline dashboard
 
 ---
 
