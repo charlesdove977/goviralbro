@@ -221,14 +221,18 @@ import json, urllib.request, os
 token_path = os.path.expanduser('~/.viral-command/yt-token.json')
 with open(token_path) as f:
     token_data = json.load(f)
-access_token = token_data.get('access_token', '')
+# Token file may use 'token' OR 'access_token' depending on how OAuth was set up
+access_token = token_data.get('access_token') or token_data.get('token', '')
 req = urllib.request.Request(
     'https://www.googleapis.com/youtube/v3/channels?part=id,contentDetails,snippet&mine=true',
     headers={'Authorization': f'Bearer {access_token}'}
 )
 with urllib.request.urlopen(req) as r:
     data = json.load(r)
-    ch = data['items'][0]
+    items = data.get('items', [])
+    if not items:
+        raise Exception('No channel found via OAuth — will fall back')
+    ch = items[0]
     print(json.dumps({
         'channel_id': ch['id'],
         'title': ch['snippet']['title'],
@@ -237,7 +241,11 @@ with urllib.request.urlopen(req) as r:
 EOF
 ```
 
-If OAuth fails, fall back to `YOUTUBE_CHANNEL_ID` in `.env`. If still missing, ask once: *"What's your YouTube channel ID? (e.g., UCxxxxxxxx)"*
+**If OAuth returns empty items or fails:** Fall back to `YOUTUBE_CHANNEL_ID` in `.env`. If still missing, use the YouTube Data API key to search by the handle from agent-brain.json:
+```bash
+curl -s "https://www.googleapis.com/youtube/v3/channels?part=id,contentDetails,snippet&forHandle={HANDLE}&key=${YOUTUBE_DATA_API_KEY}"
+```
+If all methods fail, ask once: *"What's your YouTube channel ID? (e.g., UCxxxxxxxx)"*
 
 Pull up to 50 most recent videos from the uploads playlist:
 
@@ -267,38 +275,66 @@ For each video, store:
 - `FORMAT_SCOPE = "shorts"` → keep only videos where `duration_seconds < 60`; discard longform
 - `FORMAT_SCOPE = "all"` → keep everything
 
-Then fetch `subscribers_gained` per video via Analytics API (if OAuth token exists):
+Then fetch `subscribers_gained` for ALL videos in a **single batch Analytics API call** (do NOT call per-video — that's 50 individual requests):
 
-```bash
-python scripts/fetch-yt-analytics.py --video-id ${VIDEO_ID} --json
-```
-
-Extract `metrics.subscribers_gained` if available. If the script doesn't support `--video-id`, call the Analytics API directly:
-
-```bash
+```python
 python3 - <<'EOF'
-import json, urllib.request, os
+import json, urllib.request, urllib.parse, os, datetime
+
 token_path = os.path.expanduser('~/.viral-command/yt-token.json')
 with open(token_path) as f:
     td = json.load(f)
-access_token = td['access_token']
-video_id = os.environ['VIDEO_ID']
-start = os.environ.get('START_DATE', '2020-01-01')
-import datetime; end = datetime.date.today().isoformat()
+# Handle both key names — token file may use 'token' OR 'access_token'
+access_token = td.get('access_token') or td.get('token', '')
+
+start = '2020-01-01'
+end = datetime.date.today().isoformat()
+
+# ONE call — returns subscribersGained per video_id for ALL videos in the date range
 url = (f'https://youtubeanalytics.googleapis.com/v2/reports'
-       f'?ids=channel==MINE&startDate={start}&endDate={end}'
-       f'&metrics=subscribersGained&dimensions=video'
-       f'&filters=video=={video_id}&key=')
+       f'?ids=channel==MINE'
+       f'&startDate={start}&endDate={end}'
+       f'&metrics=subscribersGained'
+       f'&dimensions=video'
+       f'&maxResults=200')
+
 req = urllib.request.Request(url, headers={'Authorization': f'Bearer {access_token}'})
-with urllib.request.urlopen(req) as r:
-    data = json.load(r)
-    rows = data.get('rows', [])
-    subs = rows[0][1] if rows else 0
-    print(json.dumps({'subscribers_gained': subs}))
+try:
+    with urllib.request.urlopen(req) as r:
+        data = json.load(r)
+    # Output: {video_id: subscribers_gained, ...}
+    result = {row[0]: row[1] for row in data.get('rows', [])}
+    print(json.dumps(result))
+except Exception as e:
+    print(json.dumps({}))  # Fail silently — subs will show as null
 EOF
 ```
 
-If Analytics API fails for any video, set `subscribers_gained = null` and continue.
+Map the returned `{video_id: subs}` dict onto each video in `youtube_videos[]`. If a video_id is not in the result, set `subscribers_gained = null`.
+
+If the OAuth token is expired, refresh it first:
+```python
+# Refresh token if needed (token_uri + refresh_token are in the token file)
+import urllib.request, urllib.parse, json, os
+td = json.load(open(os.path.expanduser('~/.viral-command/yt-token.json')))
+if 'refresh_token' in td:
+    body = urllib.parse.urlencode({
+        'grant_type': 'refresh_token',
+        'refresh_token': td['refresh_token'],
+        'client_id': td['client_id'],
+        'client_secret': td['client_secret']
+    }).encode()
+    req = urllib.request.Request(td.get('token_uri', 'https://oauth2.googleapis.com/token'), data=body)
+    with urllib.request.urlopen(req) as r:
+        new_tokens = json.load(r)
+    access_token = new_tokens['access_token']
+    # Update token file with new access_token
+    td['access_token'] = access_token
+    td['token'] = access_token
+    json.dump(td, open(os.path.expanduser('~/.viral-command/yt-token.json'), 'w'))
+```
+
+If Analytics API fails entirely, set `subscribers_gained = null` for all videos and continue — do not block the scan.
 
 Show progress:
 ```
@@ -374,7 +410,8 @@ Sort descending by composite score. Take top 10.
 ════════════════════════════════════════
 ```
 
-- Instagram `Subs+` always shows `—` (instaloader can't access follower gain data)
+- YouTube `Subs+` shows actual `subscribers_gained` from the Analytics API batch call (e.g., `+47`). Show `—` only if the Analytics API call failed entirely.
+- Instagram `Subs+` always shows `—` — instaloader cannot access follower gain data.
 - Every entry must show the direct clickable URL on the second line
 - If fewer than 10 pieces found, show however many exist
 
@@ -1156,37 +1193,66 @@ For each selected winner, run the same analysis as `/viral:discover` Step 4 + St
 # Extract video ID from source_url
 VIDEO_ID=$(echo "[source_url]" | sed 's/.*[?&]v=\([^&]*\).*/\1/; s|.*/shorts/\([^?]*\).*|\1|')
 
-# Download first 60s (longform) or 30s (shorts)
-yt-dlp --external-downloader ffmpeg \
-  --external-downloader-args "ffmpeg_i:-t 60" \
-  -f "bestvideo[ext=mp4][height<=720]" \
+# Attempt 1: download with ffmpeg time limit (fastest)
+yt-dlp --download-sections "*0-60" \
+  -f "bestvideo[ext=mp4][height<=720]/bestvideo[height<=720]/best[height<=720]" \
   -o "/tmp/vc_winner_${VIDEO_ID}.%(ext)s" \
-  "[source_url]"
+  "[source_url]" 2>/tmp/yt_err_${VIDEO_ID}.txt
+
+# If Attempt 1 fails (JS challenge / bot detection), retry without format filter
+if [ $? -ne 0 ]; then
+  yt-dlp --download-sections "*0-60" \
+    -f "best" \
+    --no-check-certificates \
+    -o "/tmp/vc_winner_${VIDEO_ID}.%(ext)s" \
+    "[source_url]" 2>>/tmp/yt_err_${VIDEO_ID}.txt
+fi
+
+# Find the downloaded file (extension may vary)
+VID_FILE=$(ls /tmp/vc_winner_${VIDEO_ID}.* 2>/dev/null | grep -v ".txt" | head -1)
 
 # Extract frames (1 per second, max 20 frames for longform / 15 for shorts)
-ffmpeg -i "/tmp/vc_winner_${VIDEO_ID}.mp4" \
-  -vf "fps=1,scale=640:-1" \
-  -frames:v 20 \
-  "/tmp/vc_winner_${VIDEO_ID}_frame_%03d.jpg" -y
+if [ -n "$VID_FILE" ]; then
+  FRAMES=$([ "${FORMAT}" = "youtube_longform" ] && echo 20 || echo 15)
+  ffmpeg -i "$VID_FILE" \
+    -vf "fps=1,scale=640:-1" \
+    -frames:v $FRAMES \
+    "/tmp/vc_winner_${VIDEO_ID}_frame_%03d.jpg" -y 2>/dev/null
+else
+  echo "DOWNLOAD_FAILED: $(cat /tmp/yt_err_${VIDEO_ID}.txt | tail -3)"
+fi
 ```
 
 Then read the frames via the Read tool (as images) and analyze them.
 
 **For Instagram Reels:**
 
-If `source_url` is an Instagram URL:
-```bash
-yt-dlp -f "bestvideo[ext=mp4][height<=720]" \
-  -o "/tmp/vc_winner_ig_%(id)s.%(ext)s" \
-  "[source_url]"
+If `source_url` is an Instagram URL, use the instaloader Python API (more reliable than yt-dlp for Instagram):
 
-ffmpeg -i "/tmp/vc_winner_ig_[id].mp4" \
-  -vf "fps=1,scale=640:-1" \
-  -frames:v 15 \
-  "/tmp/vc_winner_ig_[id]_frame_%03d.jpg" -y
+```python
+python3 - <<'EOF'
+import instaloader, os, sys
+
+SHORTCODE = sys.argv[1]  # extracted from source_url
+L = instaloader.Instaloader(download_pictures=False, download_video_thumbnails=False,
+                              post_metadata_txt_pattern='', dirname_pattern='/tmp/vc_ig_{profile}')
+try:
+    post = instaloader.Post.from_shortcode(L.context, SHORTCODE)
+    L.download_post(post, target=f'/tmp/vc_ig_{SHORTCODE}')
+    print('OK')
+except Exception as e:
+    print(f'FAILED: {e}')
+EOF
 ```
 
-**If download fails for any piece:** Log the error and continue to the next. Show all failures in the summary.
+Then find the `.mp4` file in `/tmp/vc_ig_{SHORTCODE}/` and extract frames with ffmpeg (15 frames, 1/sec).
+
+If instaloader fails, fall back to yt-dlp:
+```bash
+yt-dlp -f "best[ext=mp4]/best" -o "/tmp/vc_winner_ig_${SHORTCODE}.%(ext)s" "[source_url]"
+```
+
+**If download fails for any piece:** Log title + error reason, mark as `download_failed`, continue to the next. Show all failures in the summary.
 
 ### Step 4b: Display Deep Analysis Per Winner
 
