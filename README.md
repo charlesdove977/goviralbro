@@ -2,7 +2,7 @@
   <img src="assets/gvb-logo.svg" alt="GVB" width="320" />
 </p>
 
-<h1 align="center">GO VIRAL BITCH</h1>
+<h1 align="center">GO VIRAL BRO</h1>
 
 <p align="center">
   A trainable social media coaching system for Claude Code.<br/>
