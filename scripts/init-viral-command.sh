@@ -69,7 +69,7 @@ for dir in "${DIRS[@]}"; do
     target="$PIPELINE_DIR/$dir"
     if [[ ! -d "$target" ]]; then
         mkdir -p "$target"
-        ((CREATED++))
+        CREATED=$((CREATED+1))
     fi
 done
 echo "  ✓ Directories ready ($CREATED created, $((${#DIRS[@]} - CREATED)) already existed)"
@@ -93,9 +93,9 @@ for file in "${DATA_FILES[@]}"; do
     target="$PIPELINE_DIR/$file"
     if [[ ! -f "$target" ]]; then
         touch "$target"
-        ((INITIALIZED++))
+        INITIALIZED=$((INITIALIZED+1))
     else
-        ((SKIPPED++))
+        SKIPPED=$((SKIPPED+1))
     fi
 done
 echo "  ✓ Data files ready ($INITIALIZED created, $SKIPPED already existed)"
@@ -238,7 +238,7 @@ elif [[ "${1:-}" == "--global" ]] || [[ "${2:-}" == "--global" ]]; then
             continue
         fi
         ln -sf "$cmd" "$target"
-        ((LINKED++))
+        LINKED=$((LINKED+1))
     done
     TOTAL=$(ls "$COMMANDS_SRC"/viral-*.md 2>/dev/null | wc -l | tr -d ' ')
     echo "  ✓ Symlinked to $GLOBAL_DIR ($LINKED new, $((TOTAL - LINKED)) already linked)"
@@ -266,7 +266,7 @@ else
                         continue
                     fi
                     ln -sf "$cmd" "$target"
-                    ((LINKED++))
+                    LINKED=$((LINKED+1))
                 done
                 TOTAL=$(ls "$COMMANDS_SRC"/viral-*.md 2>/dev/null | wc -l | tr -d ' ')
                 echo "  ✓ Symlinked to $GLOBAL_DIR ($LINKED new, $((TOTAL - LINKED)) already linked)"
